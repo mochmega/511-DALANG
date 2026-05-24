@@ -34,7 +34,7 @@ def auto_backup_worker():
             
             if os.path.exists(db_path) and not os.path.exists(backup_name):
                 shutil.copy(db_path, backup_name)
-                print(f"✅ AUTO-BACKUP BERHASIL: {backup_name}")
+                print(f"AUTO-BACKUP BERHASIL: {backup_name}")
                 
         time.sleep(60) # Cek jam setiap 1 menit
 

@@ -21,8 +21,13 @@ app.config['JWT_SECRET_KEY'] = secret
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # Limit uploads to 20 MB
 
 # Fix #8: Restrict CORS to known origins only
-allowed_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
-CORS(app, origins=[o.strip() for o in allowed_origins])
+# Explicitly allow both localhost and 127.0.0.1 variants used by Vite dev server
+_env_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+allowed_origins = [o.strip() for o in _env_origins]
+# Ensure both localhost and 127.0.0.1 are covered when running dev
+if "http://localhost:5173" in allowed_origins and "http://127.0.0.1:5173" not in allowed_origins:
+    allowed_origins.append("http://127.0.0.1:5173")
+CORS(app, origins=allowed_origins, supports_credentials=True)
 db.init_app(app)
 jwt.init_app(app)
 
