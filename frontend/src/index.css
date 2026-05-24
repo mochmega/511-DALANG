@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* Kita ubah warna background dasar ke Dark Mode secara global */
+body {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+@theme {
+  --color-theme-50: var(--theme-50);
+  --color-theme-100: var(--theme-100);
+  --color-theme-200: var(--theme-200);
+  --color-theme-300: var(--theme-300);
+  --color-theme-400: var(--theme-400);
+  --color-theme-500: var(--theme-500);
+  --color-theme-600: var(--theme-600);
+  --color-theme-700: var(--theme-700);
+  --color-theme-800: var(--theme-800);
+  --color-theme-900: var(--theme-900);
+  --color-theme-950: var(--theme-950);
+}
+
+:root {
+  --theme-50: var(--color-sky-50);
+  --theme-100: var(--color-sky-100);
+  --theme-200: var(--color-sky-200);
+  --theme-300: var(--color-sky-300);
+  --theme-400: var(--color-sky-400);
+  --theme-500: var(--color-sky-500);
+  --theme-600: var(--color-sky-600);
+  --theme-700: var(--color-sky-700);
+  --theme-800: var(--color-sky-800);
+  --theme-900: var(--color-sky-900);
+  --theme-950: var(--color-sky-950);
+}
+
+[data-theme='emerald'] {
+  --theme-50: var(--color-emerald-50);
+  --theme-100: var(--color-emerald-100);
+  --theme-200: var(--color-emerald-200);
+  --theme-300: var(--color-emerald-300);
+  --theme-400: var(--color-emerald-400);
+  --theme-500: var(--color-emerald-500);
+  --theme-600: var(--color-emerald-600);
+  --theme-700: var(--color-emerald-700);
+  --theme-800: var(--color-emerald-800);
+  --theme-900: var(--color-emerald-900);
+  --theme-950: var(--color-emerald-950);
+}
+
+[data-theme='rose'] {
+  --theme-50: var(--color-rose-50);
+  --theme-100: var(--color-rose-100);
+  --theme-200: var(--color-rose-200);
+  --theme-300: var(--color-rose-300);
+  --theme-400: var(--color-rose-400);
+  --theme-500: var(--color-rose-500);
+  --theme-600: var(--color-rose-600);
+  --theme-700: var(--color-rose-700);
+  --theme-800: var(--color-rose-800);
+  --theme-900: var(--color-rose-900);
+  --theme-950: var(--color-rose-950);
+}
+
+[data-theme='violet'] {
+  --theme-50: var(--color-violet-50);
+  --theme-100: var(--color-violet-100);
+  --theme-200: var(--color-violet-200);
+  --theme-300: var(--color-violet-300);
+  --theme-400: var(--color-violet-400);
+  --theme-500: var(--color-violet-500);
+  --theme-600: var(--color-violet-600);
+  --theme-700: var(--color-violet-700);
+  --theme-800: var(--color-violet-800);
+  --theme-900: var(--color-violet-900);
+  --theme-950: var(--color-violet-950);
+}
+
+[data-theme='amber'] {
+  --theme-50: var(--color-amber-50);
+  --theme-100: var(--color-amber-100);
+  --theme-200: var(--color-amber-200);
+  --theme-300: var(--color-amber-300);
+  --theme-400: var(--color-amber-400);
+  --theme-500: var(--color-amber-500);
+  --theme-600: var(--color-amber-600);
+  --theme-700: var(--color-amber-700);
+  --theme-800: var(--color-amber-800);
+  --theme-900: var(--color-amber-900);
+  --theme-950: var(--color-amber-950);
+}

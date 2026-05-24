@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Tambah Berkas Baru</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5" style="max-width: 600px;">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Tambah Berkas Baru</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Nomor Berkas (Fisik)</label>
+                        <input type="text" class="form-control" name="no_berkas" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Pemilik Berkas</label>
+                        <input type="text" class="form-control" name="nama" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Identitas (NIK/NPWP)</label>
+                        <input type="text" class="form-control" name="identitas" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Isi Berkas</label>
+                        <textarea class="form-control" name="isi_berkas" rows="3" placeholder="Sebutkan isi dokumen di dalam map..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lokasi Simpan (Rak/Lemari/Boks)</label>
+                        <input type="text" class="form-control" name="lokasi">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Status Ketersediaan</label>
+                        <select class="form-select" name="status_pinjam">
+                            <option value="Di Gudang">Tersedia Di Gudang</option>
+                            <option value="Sedang Dipinjam">Sedang Dipinjam</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 mb-2">Simpan Berkas</button>
+                    <a href="/" class="btn btn-outline-secondary w-100">Batal & Kembali</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
