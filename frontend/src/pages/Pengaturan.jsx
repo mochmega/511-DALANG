@@ -77,13 +77,16 @@ export default function Pengaturan() {
     document.documentElement.setAttribute('data-theme', color)
     
     // Save to backend
-    const username = localStorage.getItem('username')
-    if (username) {
+    const token = localStorage.getItem('token')
+    if (token) {
       try {
         await fetch(`${import.meta.env.VITE_API_URL}/api/user/theme`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, theme: color })
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ theme: color })
         })
       } catch (err) {
         console.error("Failed to save theme to backend", err)

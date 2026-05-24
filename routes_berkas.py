@@ -55,12 +55,13 @@ def login():
     return jsonify(status='error', message='Username atau Password salah'), 401
 
 @auth_bp.route('/api/user/theme', methods=['POST'])
+@jwt_required()
 def update_theme():
+    identity = get_jwt_identity()
     data = request.json
-    username = data.get('username')
     theme = data.get('theme')
     
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=identity).first()
     if user:
         user.theme = theme
         db.session.commit()
@@ -426,6 +427,7 @@ def update_isi_berkas():
     return jsonify({'status': 'success', 'message': 'Tersimpan ke kamar masing-masing!'})
 
 @berkas_bp.route('/api/sirkulasi/dipinjam', methods=['GET'])
+@jwt_required()
 def get_dipinjam():
     conn = get_db_connection()
     rows = conn.execute("SELECT no_berkas, nama, isi_berkas FROM data_berkas WHERE isi_berkas != 'Belum diupdate' AND isi_berkas IS NOT NULL").fetchall()
@@ -451,6 +453,7 @@ def get_dipinjam():
 # Rute API Eksekusi Mutasi Keluar
 # ==========================================
 @berkas_bp.route('/api/mutasi', methods=['POST'])
+@jwt_required()
 def proses_mutasi():
     data = request.get_json()
     no_berkas = data.get('no_berkas')
@@ -492,6 +495,7 @@ def proses_mutasi():
 # Rute API Eksekusi Mutasi Massal (Bulk)
 # ==========================================
 @berkas_bp.route('/api/mutasi/bulk', methods=['POST'])
+@jwt_required()
 def proses_mutasi_bulk():
     data = request.get_json()
     no_berkas_list = data.get('no_berkas_list', [])
@@ -532,6 +536,7 @@ def proses_mutasi_bulk():
 # 6. Rute API Registrasi Cerdas (Smart Registration)
 # ==========================================
 @berkas_bp.route('/api/registrasi/saran-nomor', methods=['GET'])
+@jwt_required()
 def saran_nomor():
     conn = get_db_connection()
     # Tarik semua nomor berkas yang aktif (mengabaikan yang depannya EKS-)
@@ -571,6 +576,7 @@ def saran_nomor():
     })
 
 @berkas_bp.route('/api/registrasi', methods=['POST'])
+@jwt_required()
 def proses_registrasi():
     data = request.get_json()
     no_berkas = data.get('no_berkas')

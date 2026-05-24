@@ -34,7 +34,10 @@ venv.bak/
 
 # Database
 database.db
+gudang.db
 *.sqlite3
+*.db
+*.zip
 instance/
 
 # Node / React Frontend
