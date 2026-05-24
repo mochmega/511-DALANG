@@ -169,6 +169,7 @@ def ganti_password():
     return jsonify({"status": "success", "message": "Password berhasil diubah"})
 
 @auth_bp.route('/api/register/bulk', methods=['POST'])
+@jwt_required()
 def register_bulk():
     if 'file' not in request.files:
         return jsonify(status='error', message='File tidak ditemukan'), 400
@@ -206,6 +207,7 @@ def register_bulk():
     return jsonify(status='success', message=f'{berhasil} user berhasil ditambahkan, {dilewati} dilewati (sudah ada).')
 
 @auth_bp.route('/api/register/template', methods=['GET'])
+@jwt_required()
 def download_csv_template():
     si = StringIO()
     cw = csv.writer(si)
@@ -263,6 +265,7 @@ def validate_token():
     return jsonify({'status': 'success', 'message': 'Token valid'})
 
 @berkas_bp.route('/api/berkas', methods=['GET'])
+@jwt_required()
 def search_berkas():
     search_query = request.args.get('search', '').strip()
     search_by = request.args.get('by', 'all')
@@ -360,7 +363,7 @@ def update_isi_berkas():
     if not no_berkas:
         return jsonify({'status': 'error', 'message': 'Nomor berkas tidak valid'}), 400
         
-    username = data.get('username', 'Sistem')
+    username = get_jwt_identity()
     log_action = data.get('log_action')
     log_desc = data.get('log_desc')
         
@@ -611,6 +614,7 @@ def proses_registrasi():
 # 8. Rute API Upload File Scan & Lihat File
 # ==========================================
 @berkas_bp.route('/api/upload', methods=['POST'])
+@jwt_required()
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'status': 'error', 'message': 'Tidak ada file yang dikirim'}), 400
@@ -636,6 +640,7 @@ def upload_file():
 
 # Rute ini untuk menampilkan file PDF/JPG di browser (Preview)
 @berkas_bp.route('/api/files/<filename>', methods=['GET'])
+@jwt_required()
 def get_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
@@ -644,6 +649,7 @@ def get_file(filename):
 # 9. Rute API Export Seluruh Data ke Excel/CSV
 # ==========================================
 @berkas_bp.route('/api/export/csv', methods=['GET'])
+@jwt_required()
 def export_csv():
     conn = get_db_connection()
     # Ambil semua data berkas urut berdasarkan nomor berkas

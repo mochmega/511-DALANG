@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAlert } from '../context/AlertContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function Registrasi() {
   const [activeTab, setActiveTab] = useState('satuan')
@@ -14,10 +15,14 @@ export default function Registrasi() {
   const [isLoadingSatuan, setIsLoadingSatuan] = useState(false)
   
   const { showAlert } = useAlert()
+  const { auth } = useAuth()
+  const token = auth?.token || localStorage.getItem('token')
 
   const fetchSaranNomor = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/registrasi/saran-nomor`)
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/registrasi/saran-nomor`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       const data = await res.json()
       setFormData(prev => ({ ...prev, no_berkas: data.saran_nomor }))
       setIsDaurUlang(data.is_daur_ulang)
@@ -41,7 +46,7 @@ export default function Registrasi() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/registrasi`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(formData)
       })
       const data = await res.json()

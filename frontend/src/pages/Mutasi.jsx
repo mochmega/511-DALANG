@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAlert } from '../context/AlertContext'
+import { useAuth } from '../context/AuthContext'
 import UniversalSearch from '../components/UniversalSearch'
 import Pagination from '../components/Pagination'
 import { highlightText } from '../utils/highlight'
@@ -18,6 +19,8 @@ export default function Mutasi() {
   const [riwayat, setRiwayat] = useState([])
   
   const { showAlert } = useAlert()
+  const { auth } = useAuth()
+  const token = auth?.token || localStorage.getItem('token')
   
   // Keranjang Belanja untuk Mutasi Massal
   const [selectedBerkas, setSelectedBerkas] = useState([])
@@ -34,7 +37,9 @@ export default function Mutasi() {
 
   const fetchData = async (searchQuery, isRiwayat = false, currentPage = page, currentLimit = limit) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${searchQuery}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`) 
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${searchQuery}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       const rawResponse = await res.json()
       
       const rawData = Array.isArray(rawResponse) ? rawResponse : (rawResponse.data || [])
@@ -144,7 +149,7 @@ export default function Mutasi() {
         // Logika Massal
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/mutasi/bulk`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ no_berkas_list: selectedBerkas, alasan: alasanMutasi })
         })
         const data = await res.json()
@@ -158,7 +163,7 @@ export default function Mutasi() {
         // Logika Satuan
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/mutasi`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ no_berkas: modalMutasi.targetId, alasan: alasanMutasi })
         })
         const data = await res.json()

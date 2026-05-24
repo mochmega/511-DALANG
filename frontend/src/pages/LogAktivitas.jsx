@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Pagination from "../components/Pagination";
+import { useAuth } from "../context/AuthContext";
 
 const ACTION_COLORS = {
   "Registrasi": "emerald",
@@ -19,7 +20,8 @@ export default function LogAktivitas() {
   const [filterUser, setFilterUser] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const role = localStorage.getItem('role'); // Ambil role user saat ini
+  const { auth } = useAuth();
+  const role = auth?.role || 'user'; // Ambil role dari AuthContext (aman, tidak bisa dimanipulasi)
 
   const fetchLogs = async (currentPage = page) => {
     setLoading(true);

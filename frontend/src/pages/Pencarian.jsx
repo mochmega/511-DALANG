@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { debounce } from 'lodash'
 import { useAlert } from '../context/AlertContext'
+import { useAuth } from '../context/AuthContext'
 import UniversalSearch from '../components/UniversalSearch'
 import Pagination from '../components/Pagination'
 import { highlightText } from '../utils/highlight'
@@ -33,7 +34,8 @@ export default function Pencarian() {
 
   const [expandedCabang, setExpandedCabang] = useState({})
   
-  const role = localStorage.getItem('role') || 'user'
+  const { auth } = useAuth()
+  const role = auth?.role || 'user'
 
   const parseIsiBerkas = (isi) => {
     if (!isi || isi === 'Belum diupdate') return []
@@ -42,7 +44,10 @@ export default function Pencarian() {
 
   const handleCari = async (currentPage = page, currentLimit = limit) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${query}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`)
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${query}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       const rawResponse = await res.json()
       
       const rawData = Array.isArray(rawResponse) ? rawResponse : (rawResponse.data || [])

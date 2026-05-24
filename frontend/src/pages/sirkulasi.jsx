@@ -3,6 +3,7 @@ import UniversalSearch from '../components/UniversalSearch'
 import Pagination from '../components/Pagination'
 import { highlightText } from '../utils/highlight'
 import { useAlert } from '../context/AlertContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function Sirkulasi() {
   const [query, setQuery] = useState('')
@@ -17,12 +18,13 @@ export default function Sirkulasi() {
   const [selectedMap, setSelectedMap] = useState(null)
   
   const { showAlert } = useAlert()
+  const { auth } = useAuth()
   
   // State Operasional Sirkulasi
-  const [peminjam, setPeminjam] = useState(localStorage.getItem('username') || '')
+  const [peminjam, setPeminjam] = useState(auth?.username || localStorage.getItem('username') || '')
   const [tanggalPinjam, setTanggalPinjam] = useState(new Date().toISOString().split('T')[0])
   const [keperluan, setKeperluan] = useState('')
-  const role = localStorage.getItem('role') || 'user'
+  const role = auth?.role || 'user'
   
   const parseIsiBerkas = (isi) => {
     if (!isi || isi === 'Belum diupdate') return []
@@ -43,7 +45,10 @@ export default function Sirkulasi() {
   // FUNGSI PENCARIAN
   const handleCari = async (currentPage = page, currentLimit = limit) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${query}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`)
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${query}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       const rawResponse = await res.json()
       
       const rawData = Array.isArray(rawResponse) ? rawResponse : (rawResponse.data || [])
