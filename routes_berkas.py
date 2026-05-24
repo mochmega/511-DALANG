@@ -138,11 +138,16 @@ def delete_user(username):
     if not caller or caller.role != 'superuser':
         return jsonify(status='error', message='Akses ditolak'), 403
 
-    if username == 'admin123':
-        return jsonify(status='error', message='Superuser admin123 tidak bisa dihapus!'), 400
     user = User.query.filter_by(username=username).first()
     if not user:
         return jsonify(status='error', message='User tidak ditemukan'), 404
+
+    # Proteksi berbasis role — cegah hapus satu-satunya superuser (tidak bergantung nama)
+    if user.role == 'superuser':
+        sisa_super = User.query.filter_by(role='superuser').count()
+        if sisa_super <= 1:
+            return jsonify(status='error', message='Tidak bisa menghapus satu-satunya superuser yang tersisa!'), 400
+
     db.session.delete(user)
     db.session.commit()
     return jsonify(status='success', message=f'User {username} dihapus')
@@ -171,6 +176,11 @@ def ganti_password():
 @auth_bp.route('/api/register/bulk', methods=['POST'])
 @jwt_required()
 def register_bulk():
+    identity = get_jwt_identity()
+    caller = User.query.filter_by(username=identity).first()
+    if not caller or caller.role != 'superuser':
+        return jsonify(status='error', message='Akses ditolak, hanya superuser yang bisa import user massal'), 403
+
     if 'file' not in request.files:
         return jsonify(status='error', message='File tidak ditemukan'), 400
     file = request.files['file']
@@ -198,7 +208,7 @@ def register_bulk():
         new_user = User(
             username=username,
             password_hash=generate_password_hash(password),
-            role=role if role else 'user'
+            role=role if role in ('user', 'petugas') else 'user'  # superuser tidak bisa dibuat via CSV
         )
         db.session.add(new_user)
         berhasil += 1
