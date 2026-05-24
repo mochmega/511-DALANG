@@ -9,14 +9,30 @@ import Registrasi from './pages/Registrasi'
 import Login from './pages/Login'
 import LogAktivitas from './pages/LogAktivitas'
 import { useAlert } from './context/AlertContext'
+import { useAuth } from './context/AuthContext'
 
 // ==========================================
-// KOMPONEN SATPAM (PRIVATE ROUTE)
+// KOMPONEN SATPAM (PRIVATE ROUTE) — Versi Aman
 // ==========================================
-// Tugasnya ngecek: "Punya tiket (token) nggak? Kalau nggak, lempar ke /login!"
+// auth = null  → masih loading (validasi token ke backend)
+// auth = false → tidak login → redirect /login
+// auth = {...} → valid → tampilkan konten
 const PrivateRoute = ({ children }) => {
-  const hasToken = localStorage.getItem('token') !== null
-  return hasToken ? children : <Navigate to="/login" />
+  const { auth } = useAuth()
+
+  if (auth === null) {
+    // Tampilkan layar loading elegan selama validasi token berlangsung
+    return (
+      <div className="flex h-screen bg-[#060b14] items-center justify-center">
+        <div className="flex flex-col items-center gap-4 animate-pulse">
+          <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain opacity-60 drop-shadow-[0_0_12px_rgba(14,165,233,0.4)]" />
+          <p className="text-slate-500 font-semibold tracking-widest text-sm uppercase">Memverifikasi Sesi...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return auth ? children : <Navigate to="/login" replace />
 }
 
 const NavItem = ({ to, icon, label, isOpen }) => {
@@ -54,12 +70,14 @@ function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const navigate = useNavigate()
   const { showAlert } = useAlert()
+  const { auth, clearAuth } = useAuth()
 
-  // Fungsi Logout Tanpa Konfirmasi
+  // Pakai auth dari context — bukan localStorage langsung
+  const role = auth?.role || 'user'
+  const username = auth?.username || ''
+
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('role')
-    localStorage.removeItem('username')
+    clearAuth()
     navigate('/login')
   }
 
@@ -68,34 +86,18 @@ function AppLayout() {
 
   const resetIdleTimer = () => {
     if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current)
-    // 10 menit = 600000 ms
     idleTimeoutRef.current = setTimeout(() => {
       showAlert("Sesi Anda telah berakhir karena tidak ada aktivitas selama 10 menit.", "error")
       handleLogout()
-    }, 600000)
+    }, 600000) // 10 menit
   }
 
   useEffect(() => {
-    // 1. Verifikasi token ke backend saat pertama kali load
-    const token = localStorage.getItem('token')
-    if (token) {
-      fetch(`${import.meta.env.VITE_API_URL}/api/validate-token`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      .then(res => {
-        if (!res.ok) throw new Error("Token Invalid")
-      })
-      .catch(() => {
-        handleLogout()
-      })
-    }
-
-    // 2. Setup event listener untuk aktivitas user
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll']
     const activityHandler = () => resetIdleTimer()
 
     events.forEach(evt => window.addEventListener(evt, activityHandler))
-    resetIdleTimer() // start initial timer
+    resetIdleTimer()
 
     return () => {
       if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current)
@@ -122,7 +124,8 @@ function AppLayout() {
           <NavItem to="/pencarian" label="Pencarian" isOpen={isSidebarOpen} icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>} />
           <NavItem to="/sirkulasi" label="Sirkulasi" isOpen={isSidebarOpen} icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>} />
           
-          {localStorage.getItem('role') !== 'user' && (
+          {/* Fix #6: Role dari AuthContext — bukan dari localStorage mentah */}
+          {role !== 'user' && (
             <>
               <NavItem to="/mutasi" label="Mutasi" isOpen={isSidebarOpen} icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>} />
               <NavItem to="/registrasi" label="Registrasi" isOpen={isSidebarOpen} icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" x2="12" y1="12" y2="18"/><line x1="9" x2="15" y1="15" y2="15"/></svg>} />
@@ -132,18 +135,16 @@ function AppLayout() {
 		  <NavItem to="/pengaturan" label="Pengaturan" isOpen={isSidebarOpen} icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>} />
         </nav>
 
-        {/* ======================================================= */}
-        {/* PROFIL & LOGOUT (Di pojok kiri bawah) */}
-        {/* ======================================================= */}
+        {/* PROFIL & LOGOUT */}
         <div className={`mt-auto border-t border-slate-800/50 p-4 transition-all duration-300 ${isSidebarOpen ? 'px-4' : 'px-2 flex flex-col items-center'}`}>
           <div className={`bg-slate-800/30 rounded-xl p-3 border border-slate-700/50 flex items-center gap-3 ${!isSidebarOpen && 'justify-center'}`}>
             <div className="w-10 h-10 rounded-full bg-theme-500/20 text-theme-400 border border-theme-500/30 flex items-center justify-center font-bold flex-shrink-0 uppercase">
-              {(localStorage.getItem('username') || 'SU').substring(0, 2)}
+              {(username || 'SU').substring(0, 2)}
             </div>
             {isSidebarOpen && (
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-bold text-white truncate capitalize">{localStorage.getItem('username') || 'Superuser'}</p>
-                <p className="text-[10px] text-theme-400 font-semibold tracking-wider uppercase">{localStorage.getItem('role') || 'ADMINISTRATOR'}</p>
+                <p className="text-sm font-bold text-white truncate capitalize">{username || 'Superuser'}</p>
+                <p className="text-[10px] text-theme-400 font-semibold tracking-wider uppercase">{role || 'ADMINISTRATOR'}</p>
               </div>
             )}
             <button onClick={handleLogout} title="Keluar" className={`text-slate-400 hover:text-rose-400 transition-colors p-2 rounded-lg hover:bg-rose-500/10 ${!isSidebarOpen && 'mt-2'}`}>
@@ -201,7 +202,7 @@ export default function App() {
         {/* JALUR PUBLIK: Halaman Login berdiri sendiri tanpa Sidebar */}
         <Route path="/login" element={<Login />} />
         
-        {/* JALUR PRIVAT: Semua rute di dalam AppLayout dijaga oleh Satpam (PrivateRoute) */}
+        {/* JALUR PRIVAT: Fix #7 — PrivateRoute kini menunggu validasi token selesai */}
         <Route path="/*" element={
           <PrivateRoute>
             <AppLayout />

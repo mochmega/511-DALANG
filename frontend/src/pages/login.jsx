@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAlert } from '../context/AlertContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const { showAlert } = useAlert()
+  const { login } = useAuth()
   
   const navigate = useNavigate()
 
@@ -29,12 +31,8 @@ export default function Login() {
       const data = await res.json()
       
       if (res.ok && data.status === 'success') {
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('role', data.role)
-        localStorage.setItem('username', username)
-        const theme = data.theme || 'sky'
-        localStorage.setItem('themeColor', theme)
-        document.documentElement.setAttribute('data-theme', theme)
+        // Gunakan AuthContext login() — satu sumber kebenaran, bukan manipulasi localStorage langsung
+        login(data.token, data.role, username, data.theme)
         navigate('/')
       } else {
         showAlert(`Akses Ditolak: ${data.message || 'Username atau Password salah!'}`, "error")
