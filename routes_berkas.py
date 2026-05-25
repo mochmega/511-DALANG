@@ -5,6 +5,7 @@ import time
 import shutil
 import threading
 import csv
+import math
 import zipfile
 from datetime import datetime
 from io import StringIO
@@ -342,7 +343,6 @@ def search_berkas():
             return jsonify({'data': [], 'total_pages': 0, 'current_page': page, 'total_items': 0})
         no_berkas_list = [row['no_berkas'] for row in matching_berkas]
 
-    import math
     total_pages = math.ceil(total_wadah / limit) if limit > 0 else 1
 
     placeholders = ','.join('?' * len(no_berkas_list))
@@ -771,7 +771,6 @@ def get_activity_log():
     ).fetchall()
 
     conn.close()
-    import math
     return jsonify({
         "data": [dict(log) for log in logs],
         "total": total,

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useAlert } from '../context/AlertContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function Pengaturan() {
   const [activeTab, setActiveTab] = useState('profil')
   const [selectedColor, setSelectedColor] = useState(localStorage.getItem('themeColor') || 'sky')
-  const role = localStorage.getItem('role')
+  const { auth } = useAuth()
+  const role = auth?.role || 'user'
   const { showAlert, showConfirm } = useAlert()
 
   // State Manajemen User
@@ -192,8 +194,8 @@ export default function Pengaturan() {
           <div className="space-y-6 animate-fade-in">
             <h3 className="text-lg font-bold text-white">Akun & Keamanan</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div><label className="block text-sm text-slate-400 mb-2">Username</label><input disabled value={localStorage.getItem('username') || 'admin123'} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white" /></div>
-              <div><label className="block text-sm text-slate-400 mb-2">Role</label><input disabled value={localStorage.getItem('role') || 'Superuser'} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white capitalize" /></div>
+              <div><label className="block text-sm text-slate-400 mb-2">Username</label><input disabled value={auth?.username || 'admin'} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white" /></div>
+              <div><label className="block text-sm text-slate-400 mb-2">Role</label><input disabled value={auth?.role || 'superuser'} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white capitalize" /></div>
             </div>
             <hr className="border-slate-800" />
             <form onSubmit={handleGantiPassword} className="space-y-4 max-w-sm">
