@@ -23,9 +23,9 @@ const PrivateRoute = ({ children }) => {
   if (auth === null) {
     // Tampilkan layar loading elegan selama validasi token berlangsung
     return (
-      <div className="flex h-screen bg-[#060b14] items-center justify-center">
+      <div className="flex h-screen bg-slate-950 items-center justify-center">
         <div className="flex flex-col items-center gap-4 animate-pulse">
-          <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain opacity-60 drop-shadow-[0_0_12px_rgba(14,165,233,0.4)]" />
+          <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain opacity-60 drop-shadow-lg" />
           <p className="text-slate-500 font-semibold tracking-widest text-sm uppercase">Memverifikasi Sesi...</p>
         </div>
       </div>
@@ -52,7 +52,7 @@ const NavItem = ({ to, icon, label, isOpen }) => {
       title={!isOpen ? label : ""} 
       className={`flex items-center ${isOpen ? 'justify-start px-4' : 'justify-center px-0'} py-3 mx-3 my-1 rounded-xl font-bold transition-all duration-300 relative group overflow-hidden ${
         isActive 
-          ? 'bg-theme-500/10 text-theme-400 border border-theme-500/30 shadow-[0_0_15px_rgba(14,165,233,0.15)]' 
+          ? 'bg-theme-500/10 text-theme-400 border border-theme-500/30 shadow-lg shadow-theme-500/15' 
           : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent'
       }`}
       style={{ textDecoration: 'none' }}
@@ -77,7 +77,7 @@ function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const navigate = useNavigate()
   const { showAlert } = useAlert()
-  const { auth, clearAuth } = useAuth()
+  const { auth, clearAuth, updatePreferences } = useAuth()
 
   // Pakai auth dari context — bukan localStorage langsung
   const role = auth?.role || 'user'
@@ -113,13 +113,13 @@ function AppLayout() {
   }, [])
 
   return (
-    <div className="flex h-screen bg-[#060b14] text-slate-200 font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden">
       
-      <aside className={`${isSidebarOpen ? 'w-72' : 'w-24'} bg-[#0f172a] border-r border-slate-800/50 flex flex-col transition-all duration-300 shadow-2xl z-20 flex-shrink-0`}>
+      <aside className={`${isSidebarOpen ? 'w-72' : 'w-24'} bg-slate-900 border-r border-slate-800/50 flex flex-col transition-all duration-300 shadow-2xl z-20 flex-shrink-0`}>
         
         <div className={`h-20 flex items-center ${isSidebarOpen ? 'justify-start px-6' : 'justify-center px-0'} border-b border-slate-800/50 flex-shrink-0 transition-all duration-300`}>
           <div className="flex-shrink-0">
-            <img src="/logo.png" alt="Logo 511 Dalang" className="w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(14,165,233,0.6)]" />
+            <img src="/logo.png" alt="Logo 511 Dalang" className="w-12 h-12 object-contain drop-shadow-xl" />
           </div>
           <div className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'ml-4 w-auto opacity-100' : 'w-0 opacity-0 m-0'}`}>
             <h1 className="text-xl font-black text-white leading-tight m-0 tracking-widest drop-shadow-md">511 DALANG</h1>
@@ -166,7 +166,7 @@ function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-theme-500/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
-        <header className="h-20 bg-[#0f172a]/80 backdrop-blur-md border-b border-slate-800/50 flex items-center px-6 shadow-sm z-10 flex-shrink-0 justify-between">
+        <header className="h-20 bg-slate-900/80 backdrop-blur-md border-b border-slate-800/50 flex items-center px-6 shadow-sm z-10 flex-shrink-0 justify-between">
           <div className="flex items-center gap-5">
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2.5 rounded-xl text-theme-400 bg-theme-500/10 border border-theme-500/30 hover:bg-theme-500/20 hover:border-theme-400/50 transition-all focus:outline-none">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={isSidebarOpen ? "M4 6h16M4 12h16M4 18h16" : "M4 6h16M4 12h8m-8 6h16"} /></svg>
@@ -174,6 +174,23 @@ function AppLayout() {
             <div className="text-white font-black tracking-wide text-lg truncate drop-shadow-md uppercase">
               APLIKASI GUDANG BELAKANG
             </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => {
+                const currentMode = auth?.mode || 'dark'
+                updatePreferences(null, currentMode === 'light' ? 'dark' : 'light')
+              }}
+              title="Toggle Terang/Gelap"
+              className="p-2.5 rounded-xl text-theme-400 bg-theme-500/10 border border-theme-500/30 hover:bg-theme-500/20 hover:border-theme-400/50 transition-all focus:outline-none flex items-center justify-center"
+            >
+              {auth?.mode === 'light' ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              )}
+            </button>
           </div>
         </header>
 
@@ -198,10 +215,6 @@ function AppLayout() {
 // ==========================================
 
 export default function App() {
-  useEffect(() => {
-    const color = localStorage.getItem('themeColor') || 'sky'
-    document.documentElement.setAttribute('data-theme', color)
-  }, [])
 
   return (
     <Router>

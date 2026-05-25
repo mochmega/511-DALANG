@@ -221,7 +221,7 @@ export default function Sirkulasi() {
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">📦 Berkas Ditemukan</h3>
           
           {sudahCari && hasil.length === 0 && (
-            <div className="p-6 bg-[#0f172a] rounded-xl border border-slate-800 text-center text-slate-500">
+            <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-center text-slate-500">
               Data tidak ditemukan
             </div>
           )}
@@ -235,7 +235,7 @@ export default function Sirkulasi() {
               <div 
                 key={index}
                 onClick={() => setSelectedMap(item)}
-                className={`p-4 bg-[#0f172a] border rounded-xl shadow-md cursor-pointer transition-all flex items-center justify-between group ${
+                className={`p-4 bg-slate-900 border rounded-xl shadow-md cursor-pointer transition-all flex items-center justify-between group ${
                   isSelected 
                     ? 'border-emerald-500 ring-1 ring-emerald-500 bg-slate-800/40' 
                     : 'border-slate-800 hover:border-slate-700'
@@ -276,13 +276,13 @@ export default function Sirkulasi() {
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">📋 Meja Kerja Sirkulasi</h3>
           
           {!selectedMap ? (
-            <div className="h-64 bg-[#0f172a]/50 border border-slate-800 rounded-2xl flex flex-col items-center justify-center text-slate-500 p-6 border-dashed">
+            <div className="h-64 bg-slate-900/50 border border-slate-800 rounded-2xl flex flex-col items-center justify-center text-slate-500 p-6 border-dashed">
               <span className="text-4xl mb-2">👈</span>
               <p className="font-medium text-slate-400">Silakan pilih salah satu rumah berkas di panel kiri</p>
               <p className="text-xs text-slate-600 mt-1">Untuk memulai proses izin pinjam atau pengembalian dokumen.</p>
             </div>
           ) : (
-            <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
               
               {/* Identitas Ringkas Berkas Aktif */}
               <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800/80 flex items-center justify-between">
@@ -294,7 +294,7 @@ export default function Sirkulasi() {
               </div>
 
               {/* FORM IDENTITAS PEMINJAM (DIGITAL LOGBOOK) */}
-              <div className="bg-[#060b14]/50 p-4 rounded-xl border border-slate-800 space-y-4">
+              <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 space-y-4">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wide block">📝 Buku Log Peminjaman (Wajib diisi jika ingin meminjam)</span>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>

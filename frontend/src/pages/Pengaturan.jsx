@@ -3,9 +3,9 @@ import { useAlert } from '../context/AlertContext'
 import { useAuth } from '../context/AuthContext'
 
 export default function Pengaturan() {
+  const { auth, updatePreferences } = useAuth()
   const [activeTab, setActiveTab] = useState('profil')
-  const [selectedColor, setSelectedColor] = useState(localStorage.getItem('themeColor') || 'sky')
-  const { auth } = useAuth()
+  const [selectedColor, setSelectedColor] = useState(auth?.theme || 'sky')
   const role = auth?.role || 'user'
   const { showAlert, showConfirm } = useAlert()
 
@@ -75,25 +75,7 @@ export default function Pengaturan() {
 
   const handleThemeChange = async (color) => {
     setSelectedColor(color)
-    localStorage.setItem('themeColor', color)
-    document.documentElement.setAttribute('data-theme', color)
-    
-    // Save to backend
-    const token = auth?.token
-    if (token) {
-      try {
-        await fetch(`${import.meta.env.VITE_API_URL}/api/user/theme`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ theme: color })
-        })
-      } catch (err) {
-        console.error("Failed to save theme to backend", err)
-      }
-    }
+    updatePreferences(color, null)
   }
 
   const handleAddUser = async (e) => {
@@ -179,7 +161,7 @@ export default function Pengaturan() {
         </h2>
       </div>
 
-      <div className="flex space-x-2 bg-[#0f172a] p-1.5 rounded-xl w-full md:w-max mb-8 border border-slate-800">
+      <div className="flex space-x-2 bg-slate-900 p-1.5 rounded-xl w-full md:w-max mb-8 border border-slate-800">
         <button className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'profil' ? 'bg-theme-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`} onClick={() => setActiveTab('profil')}>Profil & Keamanan</button>
         <button className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'tema' ? 'bg-theme-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`} onClick={() => setActiveTab('tema')}>Tampilan</button>
         {role === 'superuser' && (
@@ -187,7 +169,7 @@ export default function Pengaturan() {
         )}
       </div>
 
-      <div className="bg-[#0f172a] rounded-2xl border border-slate-800 p-8 shadow-xl">
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-8 shadow-xl">
         
         {/* TAB 1: PROFIL */}
         {activeTab === 'profil' && (

@@ -50,7 +50,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         
         {/* KARTU 1: TOTAL RUMAH BERKAS (TEMA HIJAU) */}
-        <div className="relative bg-[#0f172a] rounded-2xl p-6 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)] overflow-hidden">
+        <div className="relative bg-slate-900 rounded-2xl p-6 border border-emerald-500/30 shadow-lg shadow-emerald-500/10 overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
           
           <div className="flex items-center gap-3 mb-4 relative z-10">
@@ -59,7 +59,7 @@ export default function Dashboard() {
           </div>
           
           <div className="flex flex-col items-center justify-center py-4 relative z-10">
-            <div className="text-6xl font-black text-emerald-400 tracking-tight drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">
+            <div className="text-6xl font-black text-emerald-400 tracking-tight drop-shadow-lg">
               {loading ? "..." : stats.total_rumah}
             </div>
             <div className="mt-4 px-4 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
@@ -69,7 +69,7 @@ export default function Dashboard() {
         </div>
 
         {/* KARTU 2: SEDANG DIPINJAM (TEMA MERAH) */}
-        <div className="relative bg-[#0f172a] rounded-2xl p-6 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.1)] overflow-hidden">
+        <div className="relative bg-slate-900 rounded-2xl p-6 border border-rose-500/30 shadow-lg shadow-rose-500/10 overflow-hidden">
            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl"></div>
 
           <div className="flex items-center gap-3 mb-4 relative z-10">
@@ -78,7 +78,7 @@ export default function Dashboard() {
           </div>
           
           <div className="flex flex-col items-center justify-center py-4 relative z-10">
-            <div className="text-6xl font-black text-rose-500 tracking-tight drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]">
+            <div className="text-6xl font-black text-rose-500 tracking-tight drop-shadow-lg">
               {loading ? "..." : stats.dipinjam}
             </div>
             <div className="mt-4 px-4 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-semibold">
@@ -118,7 +118,7 @@ export default function Dashboard() {
               }
 
               return (
-                <div key={index} className={`flex items-center justify-between bg-[#0f172a] border border-slate-800 p-4 rounded-xl shadow-sm hover:border-slate-700 transition-colors group cursor-default`}>
+                <div key={index} className={`flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm hover:border-slate-700 transition-colors group cursor-default`}>
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-lg bg-${color}-500/10 text-${color}-400 flex items-center justify-center text-2xl group-hover:bg-${color}-500/20 transition-colors`}>
                       {icon}

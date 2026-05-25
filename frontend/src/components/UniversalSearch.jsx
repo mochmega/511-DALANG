@@ -8,7 +8,7 @@ export default function UniversalSearch({
   placeholder = "Ketik kata kunci pencarian..."
 }) {
   return (
-    <div className="flex flex-col md:flex-row bg-[#0f172a] rounded-xl border border-slate-700 overflow-hidden shadow-lg focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all">
+    <div className="flex flex-col md:flex-row bg-slate-900 rounded-xl border border-slate-700 overflow-hidden shadow-lg focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all">
       <div className="flex md:w-auto border-b md:border-b-0 md:border-r border-slate-700 bg-slate-900/50">
         <select 
           className="bg-transparent text-slate-300 font-semibold py-3 px-4 focus:outline-none cursor-pointer appearance-none"

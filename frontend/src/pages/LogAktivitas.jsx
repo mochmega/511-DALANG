@@ -91,7 +91,7 @@ export default function LogAktivitas() {
       </div>
 
       {/* Tabel */}
-      <div className="bg-[#0f172a] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-slate-800/80 border-b border-slate-700 text-slate-300">

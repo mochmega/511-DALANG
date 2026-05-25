@@ -25,7 +25,7 @@ def login():
     
     if user and check_password_hash(user.password_hash, data.get('password')):
         access_token = create_access_token(identity=str(user.username), additional_claims={'role': user.role})
-        return jsonify(status='success', token=access_token, role=user.role, theme=user.theme)
+        return jsonify(status='success', token=access_token, role=user.role, theme=user.theme, mode=user.mode)
     
     return jsonify(status='error', message='Username atau Password salah'), 401
 
@@ -36,7 +36,10 @@ def login():
 def validate_token():
     identity = get_jwt_identity()
     claims = get_jwt()
-    return jsonify(status='ok', username=identity, role=claims.get('role', 'user'))
+    user = User.query.filter_by(username=identity).first()
+    theme = user.theme if user else 'sky'
+    mode = user.mode if user else 'dark'
+    return jsonify(status='ok', username=identity, role=claims.get('role', 'user'), theme=theme, mode=mode)
 
 @auth_bp.route('/api/user/theme', methods=['POST'])
 @jwt_required()
@@ -44,10 +47,12 @@ def update_theme():
     identity = get_jwt_identity()
     data = request.json
     theme = data.get('theme')
+    mode = data.get('mode')
     
     user = User.query.filter_by(username=identity).first()
     if user:
-        user.theme = theme
+        if theme: user.theme = theme
+        if mode: user.mode = mode
         db.session.commit()
         return jsonify(status='success', message='Tema berhasil diperbarui')
     return jsonify(status='error', message='User tidak ditemukan'), 404

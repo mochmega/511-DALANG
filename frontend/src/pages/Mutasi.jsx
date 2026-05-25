@@ -190,7 +190,7 @@ export default function Mutasi() {
         <p className="text-slate-400 mt-1">Sistem pembekuan dan mutasi permanen dokumen (EKS) ke KPP lain.</p>
       </div>
       
-      <div className="flex space-x-2 bg-[#0f172a] p-1.5 rounded-xl w-full md:w-max mb-8 border border-slate-800 shadow-sm">
+      <div className="flex space-x-2 bg-slate-900 p-1.5 rounded-xl w-full md:w-max mb-8 border border-slate-800 shadow-sm">
         <button 
           className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all flex-1 md:flex-none ${activeTab === 'proses' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`} 
           onClick={() => setActiveTab('proses')}
@@ -229,7 +229,7 @@ export default function Mutasi() {
           </div>
 
           {sudahCari && hasilCari.length === 0 && (
-            <div className="text-center py-12 text-slate-500 bg-[#0f172a] border border-slate-800 rounded-xl">
+            <div className="text-center py-12 text-slate-500 bg-slate-900 border border-slate-800 rounded-xl">
               <span className="text-4xl block mb-2">🔍</span>
               Tidak ditemukan Wajib Pajak aktif dengan kata kunci tersebut.
             </div>
@@ -288,8 +288,8 @@ export default function Mutasi() {
               return (
                 <div key={i} className={`p-4 rounded-xl border transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group cursor-pointer ${
                   isChecked 
-                    ? 'bg-rose-500/10 border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' 
-                    : 'bg-[#0f172a] border-slate-800 hover:border-slate-600'
+                    ? 'bg-rose-500/10 border-rose-500 shadow-lg shadow-rose-500/10' 
+                    : 'bg-slate-900 border-slate-800 hover:border-slate-600'
                 }`} onClick={() => handleToggleSelect(mapData.no_berkas)}>
                   
                   <div className="flex items-center gap-4 w-full md:w-auto">
@@ -338,7 +338,7 @@ export default function Mutasi() {
       )}
 
       {activeTab === 'riwayat' && (
-        <div className="animate-fade-in bg-[#0f172a] rounded-2xl border border-slate-800 overflow-hidden shadow-lg">
+        <div className="animate-fade-in bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-lg">
           <div className="p-5 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
             <h5 className="font-bold text-lg text-white">📖 Wajib Pajak yang Telah Pindah KPP ({riwayat.length})</h5>
           </div>
@@ -387,8 +387,8 @@ export default function Mutasi() {
       {/* POP-UP MODAL KUSTOM: PERINGATAN MUTASI (SATUAN & MASSAL) */}
       {/* ========================================================================= */}
       {modalMutasi.isOpen && (
-        <div className="fixed inset-0 bg-[#060b14]/85 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-[#0f172a] border border-rose-500/40 rounded-2xl shadow-[0_0_40px_rgba(244,63,94,0.15)] w-full max-w-lg overflow-hidden transform transition-all scale-100">
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-rose-500/40 rounded-2xl shadow-2xl shadow-rose-500/15 w-full max-w-lg overflow-hidden transform transition-all scale-100">
             
             {/* Header Modal */}
             <div className="bg-rose-950/40 p-5 border-b border-rose-500/30 text-rose-400 font-bold text-lg flex items-center gap-3">

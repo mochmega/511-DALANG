@@ -8,6 +8,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(120), nullable=False)
     role = db.Column(db.String(20), default='user') # superuser, petugas, user
     theme = db.Column(db.String(20), default='sky')
+    mode = db.Column(db.String(10), default='dark')
 
 class Dokumen(db.Model):
     __tablename__ = "dokumen"

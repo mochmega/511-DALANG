@@ -129,7 +129,7 @@ export default function Registrasi() {
         <p className="text-slate-400 mt-1">Sistem Pintar Penempatan Arsip Fisik & Sinkronisasi Database.</p>
       </div>
 
-      <div className="flex space-x-2 bg-[#0f172a] p-1.5 rounded-xl w-full md:w-max mb-8 border border-slate-800 shadow-sm">
+      <div className="flex space-x-2 bg-slate-900 p-1.5 rounded-xl w-full md:w-max mb-8 border border-slate-800 shadow-sm">
         <button 
           className={`px-8 py-2.5 rounded-lg font-bold text-sm transition-all flex-1 md:flex-none ${activeTab === 'satuan' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`} 
           onClick={() => setActiveTab('satuan')}
@@ -148,14 +148,14 @@ export default function Registrasi() {
       {/* TAB 1: REGISTRASI SATUAN */}
       {/* ================================================================= */}
       {activeTab === 'satuan' && (
-        <div className="bg-[#0f172a] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl animate-fade-in max-w-3xl">
+        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl animate-fade-in max-w-3xl">
           <div className="p-8">
             <form onSubmit={handleSubmitSatuan} className="space-y-6">
               
               {/* Indikator AI Nomor */}
               <div className={`p-6 rounded-xl text-center border-2 border-dashed transition-all ${
                 isDaurUlang 
-                  ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.1)]' 
+                  ? 'bg-amber-500/10 border-amber-500/50 shadow-lg shadow-amber-500/10' 
                   : 'bg-slate-800/30 border-slate-600'
               }`}>
                 <label className="block text-sm font-bold text-slate-400 mb-4 uppercase tracking-wider">
@@ -207,7 +207,7 @@ export default function Registrasi() {
               </div>
 
               <div className="pt-4">
-                <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-lg font-bold py-4 rounded-xl transition-all shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.4)] flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed" disabled={isLoadingSatuan}>
+                <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-lg font-bold py-4 rounded-xl transition-all shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed" disabled={isLoadingSatuan}>
                   {isLoadingSatuan ? '⏳ Menyimpan Data...' : '💾 REGISTRASI WP BARU'}
                 </button>
               </div>
@@ -220,7 +220,7 @@ export default function Registrasi() {
       {/* TAB 2: REGISTRASI MASSAL */}
       {/* ================================================================= */}
       {activeTab === 'massal' && (
-        <div className="bg-[#0f172a] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl animate-fade-in">
+        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl animate-fade-in">
           <div className="p-8">
             
             <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-6 py-5 rounded-xl shadow-sm flex items-start gap-4 mb-8">
@@ -260,7 +260,7 @@ export default function Registrasi() {
                 
                 <button 
                   type="submit" 
-                  className="w-full sm:flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-lg font-bold py-3 px-6 rounded-xl transition-all shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.4)] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed" 
+                  className="w-full sm:flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-lg font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed" 
                   disabled={isLoadingMassal || !fileMassal}
                 >
                   {isLoadingMassal ? '⏳ Sedang Memproses Massal...' : '🚀 MULAI MIGRASI DATA'}

@@ -2,7 +2,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange, tota
   if (totalPages <= 1 && totalItems === 0) return null;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 bg-[#0f172a] p-4 rounded-xl border border-slate-800">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 bg-slate-900 p-4 rounded-xl border border-slate-800">
       <div className="text-slate-400 text-sm">
         Total <span className="font-bold text-white">{totalItems}</span> Rumah Berkas ditemukan
       </div>

@@ -260,7 +260,7 @@ export default function Pencarian() {
 
       {/* TABEL HASIL PENCARIAN */}
       {sudahCari && hasil.length > 0 && (
-        <div className="bg-[#0f172a] rounded-2xl border border-slate-800 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead className="bg-slate-800/80 border-b border-slate-700 text-slate-300 text-sm tracking-wide">
@@ -332,8 +332,8 @@ export default function Pencarian() {
       {/* MODAL 1: LIHAT ISI DOKUMEN (GLASSMORPHISM) */}
       {/* ========================================= */}
       {modalMode === 'lihat' && selectedMap && (
-        <div className="fixed inset-0 bg-[#060b14]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-[#0f172a] border border-slate-700 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
             
             {/* Header Modal */}
             <div className="p-5 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
@@ -347,7 +347,7 @@ export default function Pencarian() {
             </div>
 
             {/* Body Modal */}
-            <div className="overflow-y-auto flex-1 bg-[#060b14]/50">
+            <div className="overflow-y-auto flex-1 bg-slate-950/50">
               {selectedMap.dokumenList.length === 0 ? (
                 <div className="text-center py-20 text-slate-500">
                   <span className="text-5xl mb-3 block">📭</span>
@@ -420,8 +420,8 @@ export default function Pencarian() {
       {/* MODAL 2: TAMBAH DOKUMEN BARU */}
       {/* ========================================= */}
       {modalMode === 'tambah' && selectedMap && (
-        <div className="fixed inset-0 bg-[#060b14]/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-[#0f172a] border border-slate-700 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
             <div className="p-5 border-b border-slate-800 bg-emerald-900/20 text-emerald-400 font-bold text-lg flex items-center gap-2">
               ➕ <span>Tambah Dokumen Baru</span>
             </div>
@@ -493,9 +493,9 @@ export default function Pencarian() {
       {/* MODAL 3: EDIT DOKUMEN */}
       {/* ========================================= */}
       {modalMode === 'edit_satu' && editDocData && (
-        <div className="fixed inset-0 bg-[#060b14]/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-[#0f172a] border border-slate-700 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
-            <div className="p-5 border-b border-slate-800 bg-[#0f172a]/20 text-theme-400 font-bold text-lg flex items-center gap-2">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
+            <div className="p-5 border-b border-slate-800 bg-slate-900/20 text-theme-400 font-bold text-lg flex items-center gap-2">
               ✏️ <span>Edit Dokumen</span>
             </div>
             

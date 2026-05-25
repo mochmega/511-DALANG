@@ -51,8 +51,8 @@ export function AlertProvider({ children }) {
       
       {/* GLOBAL POPUP UI */}
       {alertState.isOpen && (
-        <div className="fixed inset-0 bg-[#060b14]/85 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-[#0f172a] border border-slate-700/50 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] w-full max-w-sm overflow-hidden transform transition-all scale-100 flex flex-col items-center p-6 text-center">
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700/50 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100 flex flex-col items-center p-6 text-center">
             
             {/* ICON */}
             <div className="mb-4">

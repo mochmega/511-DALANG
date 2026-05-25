@@ -8,13 +8,14 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const { showAlert } = useAlert()
-  const { login } = useAuth()
+  const { login, updatePreferences } = useAuth()
+  const [isLightMode, setIsLightMode] = useState(document.documentElement.getAttribute('data-mode') === 'light')
   
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Reset tema ke warna default (sky) saat berada di halaman login
-    document.documentElement.setAttribute('data-theme', 'sky')
+    // Tema akan di-handle oleh AuthContext (guestTheme/guestMode)
+    // Jika belum diset, defaultnya di-handle di sana
   }, [])
 
   const handleLogin = async (e) => {
@@ -45,19 +46,37 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#060b14] relative overflow-hidden font-sans">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden font-sans">
       
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-96 bg-theme-500/10 rounded-full blur-[150px] pointer-events-none z-0"></div>
 
+      <div className="absolute top-6 right-6 z-20">
+        <button 
+          onClick={() => {
+            const newMode = isLightMode ? 'dark' : 'light'
+            setIsLightMode(!isLightMode)
+            updatePreferences(null, newMode)
+          }}
+          title="Toggle Terang/Gelap"
+          className="p-3 rounded-full bg-theme-500/10 text-theme-400 border border-theme-500/30 hover:bg-theme-500/20 hover:border-theme-400/50 transition-all backdrop-blur-md shadow-lg"
+        >
+          {isLightMode ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+          )}
+        </button>
+      </div>
+
       <div className="w-full max-w-md p-6 relative z-10 animate-fade-in">
         
-        <div className="bg-[#0f172a]/90 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden pb-4">
+        <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-2xl overflow-hidden pb-4">
           
           <div className="px-8 pt-12 pb-8 text-center">
             <img 
               src="/logo.png" 
               alt="511 Dalang Logo" 
-              className="w-24 h-24 mx-auto object-contain drop-shadow-[0_0_15px_rgba(14,165,233,0.4)] mb-6"
+              className="w-24 h-24 mx-auto object-contain drop-shadow-xl mb-6"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='8' x='2' y='3' rx='2'/%3E%3Crect width='20' height='8' x='2' y='13' rx='2'/%3E%3Cline x1='10' x2='14' y1='7' y2='7'/%3E%3Cline x1='10' x2='14' y1='17' y2='17'/%3E%3C/svg%3E";
@@ -82,7 +101,7 @@ export default function Login() {
                   </div>
                   <input 
                     type="text" 
-                    className="w-full bg-[#060b14] border border-slate-700/80 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-theme-500 focus:ring-1 focus:ring-theme-500 transition-all placeholder-slate-600 shadow-inner"
+                    className="w-full bg-slate-950 border border-slate-700/80 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-theme-500 focus:ring-1 focus:ring-theme-500 transition-all placeholder-slate-600 shadow-inner"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -99,7 +118,7 @@ export default function Login() {
                   </div>
                   <input 
                     type="password" 
-                    className="w-full bg-[#060b14] border border-slate-700/80 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-theme-500 focus:ring-1 focus:ring-theme-500 transition-all placeholder-slate-600 shadow-inner"
+                    className="w-full bg-slate-950 border border-slate-700/80 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-theme-500 focus:ring-1 focus:ring-theme-500 transition-all placeholder-slate-600 shadow-inner"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -111,7 +130,7 @@ export default function Login() {
                 <button 
                   type="submit" 
                   disabled={isLoading}
-                  className="w-full bg-theme-500 hover:bg-theme-400 text-[#060b14] text-lg font-black tracking-wide py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(14,165,233,0.2)] hover:shadow-[0_0_30px_rgba(14,165,233,0.5)] disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                  className="w-full bg-theme-500 hover:bg-theme-400 text-white text-lg font-black tracking-wide py-3.5 rounded-xl transition-all shadow-lg shadow-theme-500/30 hover:shadow-xl hover:shadow-theme-500/50 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                 >
                   {isLoading ? 'VERIFYING...' : 'SECURE LOGIN'}
                 </button>
