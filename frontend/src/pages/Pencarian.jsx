@@ -38,10 +38,7 @@ export default function Pencarian() {
   const { auth } = useAuth()
   const role = auth?.role || 'user'
 
-  const parseIsiBerkas = (isi) => {
-    if (!isi || isi === 'Belum diupdate') return []
-    try { return JSON.parse(isi) } catch (e) { return [] }
-  }
+  // parseIsiBerkas deprecated: backend kini mengembalikan dokumen_list array langsung
 
   const handleCari = useCallback(async (currentPage = page, currentLimit = limit) => {
     try {
@@ -57,7 +54,7 @@ export default function Pencarian() {
       setPage(rawResponse.current_page || 1)
 
       const groupedData = rawData.reduce((acc, curr) => {
-        const currentDocs = parseIsiBerkas(curr.isi_berkas)
+        const currentDocs = curr.dokumen_list || []
         if (!acc[curr.no_berkas]) {
           acc[curr.no_berkas] = { ...curr, cabang: [], dokumenList: currentDocs }
         } else {

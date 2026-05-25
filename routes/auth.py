@@ -58,24 +58,29 @@ def update_theme():
     return jsonify(status='error', message='User tidak ditemukan'), 404
 
 @auth_bp.route('/api/export-db', methods=['GET'])
+@jwt_required()
 @superuser_required
 def export_db():
-
-    zip_path = os.path.join(os.getcwd(), 'export_database.zip')
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    ROOT_DIR = os.path.join(BASE_DIR, '..')
+    zip_path = os.path.join(ROOT_DIR, 'export_database.zip')
     try:
         with zipfile.ZipFile(zip_path, 'w') as zipf:
-            db_path1 = os.path.join(os.getcwd(), 'database.db')
-            db_path2 = os.path.join(os.getcwd(), 'instance', 'gudang.db')
+            db_path1 = os.path.join(ROOT_DIR, 'database.db')
+            db_path2 = os.path.join(ROOT_DIR, 'instance', 'gudang.db')
             if os.path.exists(db_path1):
                 zipf.write(db_path1, 'database.db')
             if os.path.exists(db_path2):
                 zipf.write(db_path2, 'gudang.db')
         
+        identity = get_jwt_identity()
+        logger.info(f"Database diekspor oleh {identity}")
         return send_file(zip_path, as_attachment=True, download_name='backup_database_lengkap.zip')
     except Exception as e:
         return jsonify(status='error', message=str(e)), 500
 
 @auth_bp.route('/api/register', methods=['POST'])
+@jwt_required()
 @superuser_required
 def register():
 
@@ -86,6 +91,9 @@ def register():
 
     if not username or not password:
         return jsonify(status='error', message='Username dan password wajib diisi'), 400
+
+    if len(password) < 6:
+        return jsonify(status='error', message='Password minimal 6 karakter'), 400
 
     if User.query.filter_by(username=username).first():
         return jsonify(status='error', message='Username sudah ada'), 400
@@ -101,12 +109,14 @@ def register():
     return jsonify(status='success', message=f'User {username} berhasil ditambahkan')
 
 @auth_bp.route('/api/users', methods=['GET'])
+@jwt_required()
 @superuser_required
 def get_users():
     users = User.query.all()
     return jsonify([{'username': u.username, 'role': u.role} for u in users])
 
 @auth_bp.route('/api/users/<username>', methods=['DELETE'])
+@jwt_required()
 @superuser_required
 def delete_user(username):
 
@@ -147,6 +157,7 @@ def ganti_password():
     return jsonify({"status": "success", "message": "Password berhasil diubah"})
 
 @auth_bp.route('/api/register/bulk', methods=['POST'])
+@jwt_required()
 @superuser_required
 def register_bulk():
 
@@ -169,6 +180,9 @@ def register_bulk():
         if len(row) < 3: continue
         username, password, role = row[0].strip(), row[1].strip(), row[2].strip()
         if not username or not password: continue
+        if len(password) < 6:
+            dilewati += 1
+            continue
         
         if User.query.filter_by(username=username).first():
             dilewati += 1

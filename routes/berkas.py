@@ -91,18 +91,40 @@ def search_berkas():
 
     total_pages = math.ceil(total_wadah / limit) if limit > 0 else 1
 
-    hasil = [{
-        'id': b.id,
-        'no_berkas': b.no_berkas,
-        'npwp_9': b.npwp_9,
-        'npwp': b.npwp,
-        'npwp_16': b.npwp_16,
-        'nitku': b.nitku,
-        'nama': b.nama,
-        'isi_berkas': b.isi_berkas,
-        'lokasi': b.lokasi,
-        'status_pinjam': b.status_pinjam
-    } for b in berkas]
+    hasil = []
+    for b in berkas:
+        docs = []
+        for d in b.dokumen:
+            docs.append({
+                'id': d.id,
+                'nama': d.nama,
+                'nomor': d.nomor,
+                'jenis': d.jenis,
+                'tahun': d.tahun,
+                'tanggal': d.tanggal,
+                'pemilik': d.pemilik,
+                'wadah': d.wadah,
+                'status': d.status,
+                'peminjam': d.peminjam,
+                'tanggal_pinjam': d.tanggal_pinjam,
+                'tanggal_kembali': d.tanggal_kembali,
+                'keperluan': d.keperluan,
+                'file_scan': d.file_scan,
+                'batas_kembali': d.batas_kembali
+            })
+            
+        hasil.append({
+            'id': b.id,
+            'no_berkas': b.no_berkas,
+            'npwp_9': b.npwp_9,
+            'npwp': b.npwp,
+            'npwp_16': b.npwp_16,
+            'nitku': b.nitku,
+            'nama': b.nama,
+            'dokumen_list': docs,
+            'lokasi': b.lokasi,
+            'status_pinjam': b.status_pinjam
+        })
     
     return jsonify({
         'data': hasil,
@@ -115,6 +137,12 @@ def search_berkas():
 @jwt_required()
 def update_isi_berkas():
     data = request.get_json()
+    from models import User
+    identity = get_jwt_identity()
+    user = User.query.filter_by(username=identity).first()
+    if not user or user.role == 'user':
+        return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+
     no_berkas = data.get('no_berkas')
     full_doc_list = data.get('isi_berkas', [])
 
@@ -125,9 +153,12 @@ def update_isi_berkas():
     log_action = data.get('log_action')
     log_desc = data.get('log_desc')
         
-    all_rows = DataBerkas.query.filter_by(no_berkas=no_berkas).all()
-    if not all_rows:
+    data_berkas = DataBerkas.query.filter_by(no_berkas=no_berkas).first()
+    if not data_berkas:
         return jsonify({'status': 'error', 'message': 'Berkas tidak ditemukan'}), 404
+        
+    from models import Dokumen
+    Dokumen.query.filter_by(no_berkas=no_berkas).delete()
         
     # ✅ Sprint 3.1 — Auto-set batas_kembali +7 hari jika status Dipinjam dan belum ada
     for doc in full_doc_list:
@@ -135,35 +166,26 @@ def update_isi_berkas():
             batas = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
             doc["batas_kembali"] = batas
             
-    docs_per_row = {row.id: [] for row in all_rows}
-    
-    for doc in full_doc_list:
-        pemilik_str = doc.get('pemilik', '')
-        matched_id = None
+        new_doc = Dokumen(
+            no_berkas=no_berkas,
+            nama=doc.get('nama', '-'),
+            nomor=doc.get('nomor', '-'),
+            jenis=doc.get('jenis', '-'),
+            tahun=doc.get('tahun', '-'),
+            tanggal=doc.get('tanggal', ''),
+            pemilik=doc.get('pemilik', ''),
+            wadah=doc.get('wadah', ''),
+            status=doc.get('status', 'Di Gudang'),
+            peminjam=doc.get('peminjam', ''),
+            tanggal_pinjam=doc.get('tanggal_pinjam', ''),
+            tanggal_kembali=doc.get('tanggal_kembali', ''),
+            keperluan=doc.get('keperluan', ''),
+            file_scan=doc.get('file_scan', ''),
+            batas_kembali=doc.get('batas_kembali', '')
+        )
+        db.session.add(new_doc)
         
-        for row in all_rows:
-            if row.nitku and row.nitku in pemilik_str:
-                matched_id = row.id
-                break
-                
-        if not matched_id and "[Pusat]" in pemilik_str:
-            for row in all_rows:
-                if row.nitku and (row.nitku.endswith('000000') or row.nitku == '0000000000000000'):
-                    matched_id = row.id
-                    break
-            if not matched_id:
-                matched_id = all_rows[0].id
-                
-        if matched_id:
-            docs_per_row[matched_id].append(doc)
-        else:
-            docs_per_row[all_rows[0].id].append(doc)
-
-    for row_id, doc_list in docs_per_row.items():
-        json_str = json.dumps(doc_list) if doc_list else '[]'
-        row = DataBerkas.query.get(row_id)
-        if row:
-            row.isi_berkas = json_str
+    data_berkas.isi_berkas = json.dumps(full_doc_list) if full_doc_list else '[]'
 
     if log_action and log_desc:
         new_log = ActivityLog(action_type=log_action, description=log_desc, username=username)
@@ -347,63 +369,58 @@ def cari_dokumen():
     offset = (page - 1) * limit
 
     # Ambil semua berkas yang punya isi_berkas valid (bukan EKS-)
-    berkas_items = DataBerkas.query \
-        .filter(DataBerkas.isi_berkas != 'Belum diupdate') \
-        .filter(DataBerkas.isi_berkas.isnot(None)) \
-        .filter(DataBerkas.isi_berkas != '[]') \
-        .filter(DataBerkas.no_berkas.notlike('EKS-%')) \
-        .all()
-
+    from models import Dokumen
+    
+    query = db.session.query(Dokumen, DataBerkas).join(
+        DataBerkas, Dokumen.no_berkas == DataBerkas.no_berkas
+    ).filter(
+        DataBerkas.no_berkas.notlike('EKS-%')
+    )
+    
+    if status_filter:
+        query = query.filter(Dokumen.status == status_filter)
+        
+    if tahun_filter:
+        query = query.filter(Dokumen.tahun == tahun_filter)
+        
+    if q:
+        search_term = f"%{q}%"
+        query = query.filter(
+            or_(
+                Dokumen.nama.like(search_term),
+                Dokumen.nomor.like(search_term),
+                Dokumen.jenis.like(search_term)
+            )
+        )
+        
+    total = query.count()
+    results = query.offset(offset).limit(limit).all()
+    
     hasil = []
-    for row in berkas_items:
-        try:
-            dokumen_list = json.loads(row.isi_berkas)
-            for idx, doc in enumerate(dokumen_list):
-                # Filter status
-                if status_filter and doc.get('status', '') != status_filter:
-                    continue
-                # Filter tahun
-                if tahun_filter and str(doc.get('tahun', '')) != tahun_filter:
-                    continue
-                # Filter teks (nama, nomor, jenis)
-                if q:
-                    haystack = ' '.join([
-                        str(doc.get('nama', '')),
-                        str(doc.get('nomor', '')),
-                        str(doc.get('jenis', '')),
-                    ]).lower()
-                    if q not in haystack:
-                        continue
-                # Lolos semua filter — tambahkan ke hasil
-                hasil.append({
-                    'no_berkas': row.no_berkas,
-                    'nama_wp': row.nama,
-                    'npwp_16': row.npwp_16 or '-',
-                    'doc_index': idx,
-                    'nama': doc.get('nama', '-'),
-                    'nomor': doc.get('nomor', '-'),
-                    'jenis': doc.get('jenis', '-'),
-                    'tahun': doc.get('tahun', '-'),
-                    'tanggal': doc.get('tanggal', '-'),
-                    'pemilik': doc.get('pemilik', '-'),
-                    'status': doc.get('status', 'Di Gudang'),
-                    'peminjam': doc.get('peminjam', ''),
-                    'tanggal_pinjam': doc.get('tanggal_pinjam', ''),
-                    'batas_kembali': doc.get('batas_kembali', ''),
-                    'keperluan': doc.get('keperluan', ''),
-                    'file_scan': doc.get('file_scan', ''),
-                })
-        except Exception as e:
-            import logging
-            logging.getLogger('gudang').error(f"JSON Corrupt saat cari dokumen pada Berkas {row.no_berkas}: {str(e)}")
-
-    total = len(hasil)
-    paginated = hasil[offset: offset + limit]
-
+    for doc, data_berkas in results:
+        hasil.append({
+            'no_berkas': data_berkas.no_berkas,
+            'nama_wp': data_berkas.nama,
+            'npwp_16': data_berkas.npwp_16 or '-',
+            'doc_index': doc.id,  # Changed from idx to doc.id
+            'nama': doc.nama,
+            'nomor': doc.nomor,
+            'jenis': doc.jenis,
+            'tahun': doc.tahun,
+            'tanggal': doc.tanggal,
+            'pemilik': doc.pemilik,
+            'status': doc.status,
+            'peminjam': doc.peminjam,
+            'tanggal_pinjam': doc.tanggal_pinjam,
+            'batas_kembali': doc.batas_kembali,
+            'keperluan': doc.keperluan,
+            'file_scan': doc.file_scan,
+        })
+        
     return jsonify({
-        'data': paginated,
+        'data': hasil,
         'total': total,
-        'total_pages': math.ceil(total / limit) if total > 0 else 0,
+        'total_pages': math.ceil(total / limit) if limit > 0 else 1,
         'current_page': page
     })
 

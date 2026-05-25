@@ -27,18 +27,11 @@ export default function Sirkulasi() {
     if (auth?.username) setPeminjam(auth.username)
   }, [auth])
   const [tanggalPinjam, setTanggalPinjam] = useState(new Date().toISOString().split('T')[0])
-  const [batasKembali, setBatasKembali] = useState(() => {
-    const d = new Date()
-    d.setDate(d.getDate() + 7)
-    return d.toISOString().split('T')[0] // Default +7 hari dari hari ini
-  })
+  const [batasKembali, setBatasKembali] = useState('')
   const [keperluan, setKeperluan] = useState('')
   const role = auth?.role || 'user'
   
-  const parseIsiBerkas = (isi) => {
-    if (!isi || isi === 'Belum diupdate') return []
-    try { return JSON.parse(isi) } catch (e) { return [] }
-  }
+  // parseIsiBerkas deprecated: backend kini mengembalikan dokumen_list array langsung
 
   // Membersihkan duplikat jika ada struktur cabang
   const getUniqueDocs = (docs) => {
@@ -66,7 +59,7 @@ export default function Sirkulasi() {
       setPage(rawResponse.current_page || 1)
       
       const groupedData = rawData.reduce((acc, curr) => {
-        const currentDocs = parseIsiBerkas(curr.isi_berkas)
+        const currentDocs = curr.dokumen_list || []
         if (!acc[curr.no_berkas]) {
           acc[curr.no_berkas] = { ...curr, nama: curr.nama, dokumenList: currentDocs }
         } else {

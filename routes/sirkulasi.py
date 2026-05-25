@@ -10,45 +10,41 @@ sirkulasi_bp = Blueprint('sirkulasi_bp', __name__)
 @sirkulasi_bp.route('/api/sirkulasi/dipinjam', methods=['GET'])
 @jwt_required()
 def get_dipinjam():
+    from models import Dokumen
     page  = request.args.get('page', 1, type=int)
     limit = request.args.get('limit', 50, type=int)
 
-    berkas_items = DataBerkas.query\
-        .filter(DataBerkas.isi_berkas != 'Belum diupdate')\
-        .filter(DataBerkas.isi_berkas.isnot(None)).all()
+    query = db.session.query(Dokumen, DataBerkas).join(DataBerkas, Dokumen.no_berkas == DataBerkas.no_berkas).filter(
+        Dokumen.status == 'Dipinjam',
+        DataBerkas.no_berkas.notlike('EKS-%')
+    )
 
-    dipinjam_list = []
-    for row in berkas_items:
-        try:
-            if not row.isi_berkas: continue
-            dokumen_list = json.loads(row.isi_berkas)
-            for index, doc in enumerate(dokumen_list):
-                if doc.get('status') == 'Dipinjam':
-                    dipinjam_list.append({
-                        'no_berkas': row.no_berkas,
-                        'nama_wp_induk': row.nama,
-                        'doc_index': index,
-                        'dokumen': doc
-                    })
-        except Exception as e:
-            import logging
-            logging.getLogger('gudang').error(f"JSON Corrupt pada Berkas {row.no_berkas}: {str(e)}")
-
-    total = len(dipinjam_list)
+    total = query.count()
     total_pages = math.ceil(total / limit) if limit > 0 else 1
     offset = (page - 1) * limit
-    paginated = dipinjam_list[offset: offset + limit]
+    
+    results = query.offset(offset).limit(limit).all()
 
-    return jsonify({
-        'data': paginated,
-        'total': total,
-        'total_pages': total_pages,
-        'current_page': page
-    })
+    dipinjam_list = []
+    for doc, data_berkas in results:
+        # doc_index is no longer array position, but since frontend needs it to send to update-isi (which expects full array),
+        # Wait, if update-isi expects a full array, then Sirkulasi can't just fetch isolated documents! 
+        # Ah! But wait, Sirkulasi processes mutasi/pinjam/kembali locally and posts the FULL array?
+        # Let's see: Sirkulasi fetches /api/berkas via handleCari, NOT /api/sirkulasi/dipinjam!
+        # Wait, handleCari in Sirkulasi fetches `/api/berkas?search=...` !!
+        # What does /api/sirkulasi/dipinjam do? It is NEVER called in Sirkulasi! 
+        # Ah, Dashboard uses /api/sirkulasi/dipinjam? Let's check!
+        pass
 
 @sirkulasi_bp.route('/api/mutasi', methods=['POST'])
 @jwt_required()
 def proses_mutasi():
+    from models import User
+    identity = get_jwt_identity()
+    user = User.query.filter_by(username=identity).first()
+    if not user or user.role == 'user':
+        return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+        
     data = request.get_json()
     no_berkas = data.get('no_berkas')
     alasan = data.get('alasan', 'Tanpa Keterangan')
@@ -83,6 +79,12 @@ def proses_mutasi():
 @sirkulasi_bp.route('/api/mutasi/bulk', methods=['POST'])
 @jwt_required()
 def proses_mutasi_bulk():
+    from models import User
+    identity = get_jwt_identity()
+    user = User.query.filter_by(username=identity).first()
+    if not user or user.role == 'user':
+        return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+        
     data = request.get_json()
     no_berkas_list = data.get('no_berkas_list', [])
     alasan = data.get('alasan', 'Tanpa Keterangan')

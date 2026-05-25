@@ -13,7 +13,7 @@ class User(db.Model):
 class Dokumen(db.Model):
     __tablename__ = "dokumen"
     id           = db.Column(db.Integer, primary_key=True)
-    no_berkas    = db.Column(db.String(50), db.ForeignKey('data_berkas.no_berkas'), nullable=False)
+    no_berkas    = db.Column(db.String(50), db.ForeignKey('data_berkas.no_berkas'), nullable=False, index=True)
     nama         = db.Column(db.String(200), nullable=False)
     nomor        = db.Column(db.String(100), default="-")
     jenis        = db.Column(db.String(100), default="-")
@@ -34,7 +34,7 @@ class Dokumen(db.Model):
 class DataBerkas(db.Model):
     __tablename__ = "data_berkas"
     id = db.Column(db.Integer, primary_key=True)
-    no_berkas = db.Column(db.String(50), nullable=False)
+    no_berkas = db.Column(db.String(50), nullable=False, unique=True, index=True)
     npwp_9 = db.Column(db.String(50))
     npwp = db.Column(db.String(50))
     npwp_16 = db.Column(db.String(50))
