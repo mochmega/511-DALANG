@@ -1,5 +1,6 @@
 import json
 import math
+from datetime import date
 from flask import Blueprint, jsonify, request
 from extensions import db
 from models import User, DataBerkas, ActivityLog
@@ -35,6 +36,21 @@ def get_dashboard_stats():
         except Exception:
             pass 
             
+    # ✅ Sprint 3.2 — Hitung dokumen terlambat kembali
+    hari_ini = date.today().isoformat()
+    total_terlambat = 0
+    for row in berkas_items:
+        try:
+            if not row.isi_berkas:
+                continue
+            dokumen_list = json.loads(row.isi_berkas)
+            for doc in dokumen_list:
+                batas = doc.get('batas_kembali', '')
+                if doc.get('status') == 'Dipinjam' and batas and batas < hari_ini:
+                    total_terlambat += 1
+        except Exception:
+            pass
+            
     # Fetch recent activities based on role
     query = ActivityLog.query
     if user and user.role == 'user':
@@ -49,7 +65,12 @@ def get_dashboard_stats():
         'created_at': log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else ''
     } for log in logs_raw]
     
-    return jsonify({'total_rumah': total_rumah, 'dipinjam': total_dipinjam, 'activities': activities})
+    return jsonify({
+        'total_rumah': total_rumah, 
+        'dipinjam': total_dipinjam, 
+        'terlambat': total_terlambat,
+        'activities': activities
+    })
 
 @dashboard_bp.route("/api/log", methods=["GET"])
 @jwt_required()

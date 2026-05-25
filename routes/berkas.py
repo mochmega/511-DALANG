@@ -4,6 +4,7 @@ import time
 import math
 import csv
 from io import StringIO
+from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request, send_from_directory, Response
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, func, cast, Integer
@@ -127,6 +128,12 @@ def update_isi_berkas():
     if not all_rows:
         return jsonify({'status': 'error', 'message': 'Berkas tidak ditemukan'}), 404
         
+    # ✅ Sprint 3.1 — Auto-set batas_kembali +7 hari jika status Dipinjam dan belum ada
+    for doc in full_doc_list:
+        if doc.get("status") == "Dipinjam" and not doc.get("batas_kembali"):
+            batas = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
+            doc["batas_kembali"] = batas
+            
     docs_per_row = {row.id: [] for row in all_rows}
     
     for doc in full_doc_list:

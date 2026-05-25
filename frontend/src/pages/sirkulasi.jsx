@@ -27,6 +27,11 @@ export default function Sirkulasi() {
     if (auth?.username) setPeminjam(auth.username)
   }, [auth])
   const [tanggalPinjam, setTanggalPinjam] = useState(new Date().toISOString().split('T')[0])
+  const [batasKembali, setBatasKembali] = useState(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 7)
+    return d.toISOString().split('T')[0] // Default +7 hari dari hari ini
+  })
   const [keperluan, setKeperluan] = useState('')
   const role = auth?.role || 'user'
   
@@ -105,6 +110,7 @@ export default function Sirkulasi() {
       status: role === 'user' ? 'Menunggu Verifikasi' : 'Dipinjam',
       peminjam: peminjam,
       tanggal_pinjam: tanggalPinjam,
+      batas_kembali: batasKembali,
       keperluan: keperluan
     }
 
@@ -144,7 +150,12 @@ export default function Sirkulasi() {
       status: 'Dipinjam'
     }
     const logDesc = `Pengajuan pinjam dokumen ${newList[docIndex].nama} diverifikasi petugas`
-    const success = await simpanKeDB(selectedMap.no_berkas, newList, 'Pinjam', logDesc)
+    const success = await simpanKeDB(
+      import.meta.env.VITE_API_URL,
+      auth,
+      selectedMap.no_berkas, 
+      newList, 'Pinjam', logDesc
+    )
     if (success) {
       setSelectedMap({ ...selectedMap, dokumenList: newList })
       handleCari()
@@ -159,7 +170,12 @@ export default function Sirkulasi() {
       status: 'Menunggu Pengembalian'
     }
     const logDesc = `Dokumen ${newList[docIndex].nama} diajukan kembali oleh ${newList[docIndex].peminjam}`
-    const success = await simpanKeDB(selectedMap.no_berkas, newList, 'Kembali', logDesc)
+    const success = await simpanKeDB(
+      import.meta.env.VITE_API_URL,
+      auth,
+      selectedMap.no_berkas, 
+      newList, 'Kembali', logDesc
+    )
     if (success) {
       setSelectedMap({ ...selectedMap, dokumenList: newList })
       handleCari()
@@ -174,7 +190,12 @@ export default function Sirkulasi() {
       status: 'Dipinjam'
     }
     const logDesc = `Pengembalian dokumen ${newList[docIndex].nama} ditolak petugas`
-    const success = await simpanKeDB(selectedMap.no_berkas, newList, 'Kembali', logDesc)
+    const success = await simpanKeDB(
+      import.meta.env.VITE_API_URL,
+      auth,
+      selectedMap.no_berkas, 
+      newList, 'Kembali', logDesc
+    )
     if (success) {
       setSelectedMap({ ...selectedMap, dokumenList: newList })
       handleCari()
@@ -296,7 +317,7 @@ export default function Sirkulasi() {
               {/* FORM IDENTITAS PEMINJAM (DIGITAL LOGBOOK) */}
               <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 space-y-4">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wide block">📝 Buku Log Peminjaman (Wajib diisi jika ingin meminjam)</span>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-400 mb-1">Nama Peminjam *</label>
                     <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 placeholder-slate-600" placeholder="Cth: Andi Setiawan" value={peminjam} onChange={(e) => setPeminjam(e.target.value)} />
@@ -308,6 +329,16 @@ export default function Sirkulasi() {
                   <div>
                     <label className="block text-xs font-bold text-slate-400 mb-1">Keperluan / Alasan</label>
                     <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 placeholder-slate-600" placeholder="Cth: Pemeriksaan Lapangan" value={keperluan} onChange={(e) => setKeperluan(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 mb-1">Batas Kembali</label>
+                    <input
+                      type="date"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-rose-500"
+                      value={batasKembali}
+                      min={tanggalPinjam}
+                      onChange={(e) => setBatasKembali(e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
@@ -334,8 +365,22 @@ export default function Sirkulasi() {
                             
                             {/* Keterangan Riwayat jika sedang dipinjam atau menunggu */}
                             {!isGudang && (
-                              <div className="mt-2 text-xs bg-rose-500/5 border border-rose-500/10 p-2 rounded-lg text-rose-400/90">
-                                🧑‍💻 {doc.status === 'Menunggu Verifikasi' ? 'Diajukan oleh' : 'Dipinjam oleh'} <strong className="text-rose-400">{doc.peminjam}</strong> pada {doc.tanggal_pinjam} ({doc.keperluan || 'Tanpa keterangan'})
+                              <div className="mt-2 text-xs bg-rose-500/5 border border-rose-500/10 p-2 rounded-lg text-rose-400/90 flex flex-col gap-1">
+                                <span>🧑‍💻 {doc.status === 'Menunggu Verifikasi' ? 'Diajukan oleh' : 'Dipinjam oleh'} <strong className="text-rose-400">{doc.peminjam}</strong> pada {doc.tanggal_pinjam} ({doc.keperluan || 'Tanpa keterangan'})</span>
+                                
+                                {/* Opsional: tampilkan batas kembali di info dokumen yang sedang dipinjam */}
+                                {doc.batas_kembali && (
+                                  <span className={`font-semibold ${
+                                    new Date(doc.batas_kembali) < new Date() 
+                                      ? 'text-rose-400' 
+                                      : 'text-amber-500'
+                                  }`}>
+                                    {new Date(doc.batas_kembali) < new Date() 
+                                      ? `⚠️ Terlambat! Batas: ${doc.batas_kembali}` 
+                                      : `📅 Batas: ${doc.batas_kembali}`
+                                    }
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
