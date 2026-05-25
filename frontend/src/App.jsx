@@ -37,6 +37,7 @@ const PrivateRoute = ({ children }) => {
 
 const RoleRoute = ({ children, allowedRoles }) => {
   const { auth } = useAuth()
+  if (auth === null) return null // Tunggu, jangan redirect dulu
   if (!allowedRoles.includes(auth?.role)) return <Navigate to="/" replace />
   return children
 }

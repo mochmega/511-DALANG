@@ -25,10 +25,11 @@ export function AuthProvider({ children }) {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       if (res.ok) {
+        const data = await res.json()
         setAuthState({
           token,
-          role: localStorage.getItem('role') || 'user',
-          username: localStorage.getItem('username') || ''
+          role: data.role,
+          username: data.username
         })
       } else {
         // Token kadaluarsa atau dipalsukan — bersihkan semua

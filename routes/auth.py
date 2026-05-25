@@ -27,11 +27,14 @@ def login():
     
     return jsonify(status='error', message='Username atau Password salah'), 401
 
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+
 @auth_bp.route('/api/validate-token', methods=['GET'])
 @jwt_required()
 def validate_token():
     identity = get_jwt_identity()
-    return jsonify(status='ok', username=identity)
+    claims = get_jwt()
+    return jsonify(status='ok', username=identity, role=claims.get('role', 'user'))
 
 @auth_bp.route('/api/user/theme', methods=['POST'])
 @jwt_required()
