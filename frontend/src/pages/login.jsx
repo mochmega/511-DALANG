@@ -33,7 +33,7 @@ export default function Login() {
       
       if (res.ok && data.status === 'success') {
         // Gunakan AuthContext login() — satu sumber kebenaran, bukan manipulasi localStorage langsung
-        login(data.token, data.role, username, data.theme)
+        login(data.token, data.role, username, data.theme, data.mode)
         navigate('/')
       } else {
         showAlert(`Akses Ditolak: ${data.message || 'Username atau Password salah!'}`, "error")

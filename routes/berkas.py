@@ -319,6 +319,157 @@ def export_csv():
     response.headers['Content-Disposition'] = 'attachment; filename=MASTER_DATA_ARSIP_GUDANG.csv'
     return response
 
+@berkas_bp.route('/api/dokumen/cari', methods=['GET'])
+@jwt_required()
+def cari_dokumen():
+    """
+    Sprint 4 — Pencarian dokumen lintas berkas.
+    Mencari di dalam JSON blob isi_berkas setiap DataBerkas.
+    Query params: q, status, tahun, page
+    """
+    q = request.args.get('q', '').strip().lower()
+    status_filter = request.args.get('status', '').strip()
+    tahun_filter = request.args.get('tahun', '').strip()
+    page = request.args.get('page', 1, type=int)
+    limit = 50
+    offset = (page - 1) * limit
+
+    # Ambil semua berkas yang punya isi_berkas valid (bukan EKS-)
+    berkas_items = DataBerkas.query \
+        .filter(DataBerkas.isi_berkas != 'Belum diupdate') \
+        .filter(DataBerkas.isi_berkas.isnot(None)) \
+        .filter(DataBerkas.isi_berkas != '[]') \
+        .filter(DataBerkas.no_berkas.notlike('EKS-%')) \
+        .all()
+
+    hasil = []
+    for row in berkas_items:
+        try:
+            dokumen_list = json.loads(row.isi_berkas)
+            for idx, doc in enumerate(dokumen_list):
+                # Filter status
+                if status_filter and doc.get('status', '') != status_filter:
+                    continue
+                # Filter tahun
+                if tahun_filter and str(doc.get('tahun', '')) != tahun_filter:
+                    continue
+                # Filter teks (nama, nomor, jenis)
+                if q:
+                    haystack = ' '.join([
+                        str(doc.get('nama', '')),
+                        str(doc.get('nomor', '')),
+                        str(doc.get('jenis', '')),
+                    ]).lower()
+                    if q not in haystack:
+                        continue
+                # Lolos semua filter — tambahkan ke hasil
+                hasil.append({
+                    'no_berkas': row.no_berkas,
+                    'nama_wp': row.nama,
+                    'npwp_16': row.npwp_16 or '-',
+                    'doc_index': idx,
+                    'nama': doc.get('nama', '-'),
+                    'nomor': doc.get('nomor', '-'),
+                    'jenis': doc.get('jenis', '-'),
+                    'tahun': doc.get('tahun', '-'),
+                    'tanggal': doc.get('tanggal', '-'),
+                    'pemilik': doc.get('pemilik', '-'),
+                    'status': doc.get('status', 'Di Gudang'),
+                    'peminjam': doc.get('peminjam', ''),
+                    'tanggal_pinjam': doc.get('tanggal_pinjam', ''),
+                    'batas_kembali': doc.get('batas_kembali', ''),
+                    'keperluan': doc.get('keperluan', ''),
+                    'file_scan': doc.get('file_scan', ''),
+                })
+        except Exception:
+            pass
+
+    total = len(hasil)
+    paginated = hasil[offset: offset + limit]
+
+    return jsonify({
+        'data': paginated,
+        'total': total,
+        'total_pages': math.ceil(total / limit) if total > 0 else 0,
+        'current_page': page
+    })
+
+@berkas_bp.route('/api/statistik', methods=['GET'])
+@jwt_required()
+def get_statistik():
+    """
+    Sprint 5 — Endpoint statistik untuk chart Dashboard.
+    Semua data diambil dari ActivityLog dan JSON blob isi_berkas.
+    """
+    from collections import defaultdict
+    from datetime import date, timedelta
+    from models import ActivityLog
+
+    # ── 1. TREN PEMINJAMAN 6 BULAN TERAKHIR ──────────────────────────
+    # Ambil dari ActivityLog action_type='Pinjam'
+    enam_bulan_lalu = date.today() - timedelta(days=180)
+
+    logs = ActivityLog.query \
+        .filter(ActivityLog.action_type == 'Pinjam') \
+        .filter(ActivityLog.created_at >= enam_bulan_lalu) \
+        .order_by(ActivityLog.created_at.asc()) \
+        .all()
+
+    tren_dict = defaultdict(int)
+    for log in logs:
+        if log.created_at:
+            bulan = log.created_at.strftime('%Y-%m')
+            tren_dict[bulan] += 1
+
+    # Pastikan semua 6 bulan tampil meski nilai 0
+    tren_result = []
+    for i in range(5, -1, -1):
+        target = date.today().replace(day=1) - timedelta(days=i * 30)
+        key = target.strftime('%Y-%m')
+        label = target.strftime('%b %Y')
+        tren_result.append({'bulan': key, 'label': label, 'total': tren_dict.get(key, 0)})
+
+    # ── 2. DISTRIBUSI JENIS DOKUMEN ────────────────────────────────────
+    # Ambil dari JSON blob isi_berkas
+    berkas_items = DataBerkas.query \
+        .filter(DataBerkas.isi_berkas.isnot(None)) \
+        .filter(DataBerkas.isi_berkas != 'Belum diupdate') \
+        .filter(DataBerkas.isi_berkas != '[]') \
+        .filter(DataBerkas.no_berkas.notlike('EKS-%')) \
+        .all()
+
+    jenis_dict = defaultdict(int)
+    top_wp_dict = defaultdict(lambda: {'nama': '', 'total': 0})
+
+    for row in berkas_items:
+        try:
+            dokumen_list = json.loads(row.isi_berkas)
+            for doc in dokumen_list:
+                # Distribusi jenis
+                jenis = doc.get('jenis', '').strip()
+                if jenis and jenis != '-':
+                    jenis_dict[jenis] += 1
+                # Top WP (hitung per no_berkas yang punya status Dipinjam)
+                if doc.get('status') == 'Dipinjam':
+                    key = row.no_berkas
+                    top_wp_dict[key]['nama'] = row.nama
+                    top_wp_dict[key]['total'] += 1
+        except Exception:
+            pass
+
+    # Sort distribusi jenis — ambil top 8
+    jenis_sorted = sorted(jenis_dict.items(), key=lambda x: x[1], reverse=True)[:8]
+    distribusi_jenis = [{'jenis': k, 'total': v} for k, v in jenis_sorted]
+
+    # Sort top WP — ambil top 5
+    top_wp_sorted = sorted(top_wp_dict.values(), key=lambda x: x['total'], reverse=True)[:5]
+
+    return jsonify({
+        'tren_peminjaman': tren_result,
+        'distribusi_jenis': distribusi_jenis,
+        'top_wp': top_wp_sorted
+    })
+
 @berkas_bp.route('/api/berkas/<no_berkas>', methods=['DELETE'])
 @superuser_required
 def delete_berkas(no_berkas):

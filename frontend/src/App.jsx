@@ -8,6 +8,7 @@ import Pengaturan from './pages/Pengaturan'
 import Registrasi from './pages/Registrasi'
 import Login from './pages/Login'
 import LogAktivitas from './pages/LogAktivitas'
+import CariDokumen from './pages/CariDokumen'
 import { useAlert } from './context/AlertContext'
 import { useAuth } from './context/AuthContext'
 
@@ -128,7 +129,8 @@ function AppLayout() {
 
         <nav className="flex-1 py-4 flex flex-col overflow-y-auto overflow-x-hidden">
           <NavItem to="/" label="Dashboard" isOpen={isSidebarOpen} icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>} />
-          <NavItem to="/pencarian" label="Pencarian" isOpen={isSidebarOpen} icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>} />
+          <NavItem to="/pencarian" label="Pencarian Berkas" isOpen={isSidebarOpen} icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>} />
+          <NavItem to="/cari-dokumen" label="Cari Dokumen" isOpen={isSidebarOpen} icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>} />
           <NavItem to="/sirkulasi" label="Sirkulasi" isOpen={isSidebarOpen} icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>} />
           
           {/* Fix #6: Role dari AuthContext — bukan dari localStorage mentah */}
@@ -198,6 +200,7 @@ function AppLayout() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/pencarian" element={<Pencarian />} />
+            <Route path="/cari-dokumen" element={<CariDokumen />} />
             <Route path="/sirkulasi" element={<Sirkulasi />} />
             <Route path="/mutasi" element={<RoleRoute allowedRoles={['superuser','petugas']}><Mutasi /></RoleRoute>} />
             <Route path="/registrasi" element={<RoleRoute allowedRoles={['superuser','petugas']}><Registrasi /></RoleRoute>} />
