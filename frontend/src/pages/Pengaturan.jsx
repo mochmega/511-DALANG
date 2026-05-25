@@ -133,6 +133,7 @@ export default function Pengaturan() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/register/bulk`, {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${auth?.token}` },
         body: formData
       })
       const data = await res.json()
