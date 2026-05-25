@@ -6,8 +6,8 @@ import sys
 import os
 import json
 
-# Add parent to path
-sys.path.insert(0, r'f:\APLIKASI GUDANG')
+# Add parent to path dynamically
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import app, init_db
 from extensions import db
