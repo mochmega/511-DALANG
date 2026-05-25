@@ -302,9 +302,28 @@ export default function Pengaturan() {
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-white">Manajemen User</h3>
               <div className="flex gap-2">
-                <a href={`${import.meta.env.VITE_API_URL}/api/register/template`} download className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-bold transition-all text-sm flex items-center">
+                <button onClick={async () => {
+                  try {
+                    const token = auth?.token;
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/register/template`, {
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error('Gagal download template');
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Template_User_Gudang.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                  } catch(err) {
+                    showAlert(`Gagal: ${err.message}`, "error");
+                  }
+                }} className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-bold transition-all text-sm flex items-center">
                   ⬇️ Template CSV
-                </a>
+                </button>
                 <button onClick={() => setIsAdding(!isAdding)} className="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg font-bold transition-all">
                   {isAdding ? 'Batal' : '+ Tambah User'}
                 </button>
