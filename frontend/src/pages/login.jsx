@@ -132,7 +132,7 @@ export default function Login() {
                   disabled={isLoading}
                   className="w-full bg-theme-500 hover:bg-theme-400 text-white text-lg font-black tracking-wide py-3.5 rounded-xl transition-all shadow-lg shadow-theme-500/30 hover:shadow-xl hover:shadow-theme-500/50 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                 >
-                  {isLoading ? 'VERIFYING...' : 'SECURE LOGIN'}
+                  {isLoading ? 'VERIFYING...' : 'LOGIN'}
                 </button>
               </div>
 
