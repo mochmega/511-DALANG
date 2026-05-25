@@ -88,7 +88,7 @@ export default function Dashboard() {
         </div>
 
         {/* KARTU 3: TERLAMBAT KEMBALI (TEMA AMBER/KUNING) */}
-        <div className="relative bg-slate-900 rounded-2xl p-6 border border-amber-500/30 shadow-lg shadow-amber-500/10 overflow-hidden">
+        <div className="relative bg-[#0f172a] rounded-2xl p-6 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)] overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
           <div className="flex items-center gap-3 mb-4 relative z-10">
             <span className="text-2xl">⚠️</span>
