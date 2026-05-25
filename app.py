@@ -11,6 +11,7 @@ from routes.auth import auth_bp
 from routes.berkas import berkas_bp
 from routes.sirkulasi import sirkulasi_bp
 from routes.dashboard import dashboard_bp
+import datetime
 import threading
 import time
 import shutil
@@ -29,7 +30,6 @@ def auto_backup_worker():
     os.makedirs(backup_folder, exist_ok=True)
     
     while True:
-        import datetime
         now = datetime.datetime.now()
         # Eksekusi backup setiap jam 02:00 Pagi
         if now.hour == 2 and now.minute == 0:
@@ -42,8 +42,6 @@ def auto_backup_worker():
                 
         time.sleep(60) # Cek jam setiap 1 menit
 
-# Hidupkan robotnya (Daemon = True agar mati otomatis kalau Flask dimatikan)
-threading.Thread(target=auto_backup_worker, daemon=True).start()
 # ---------------------------------------------------
 
 app = Flask(__name__)
@@ -104,5 +102,7 @@ def init_db():
 
 if __name__ == '__main__':
     init_db()
+    # Hidupkan robotnya (Daemon = True agar mati otomatis kalau Flask dimatikan)
+    threading.Thread(target=auto_backup_worker, daemon=True).start()
     logger.info("Backend API Flask menyala di port 5000")
     app.run(debug=False, host='0.0.0.0', port=5000)
