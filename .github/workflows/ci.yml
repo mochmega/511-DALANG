@@ -21,6 +21,9 @@ jobs:
     name: "Run Backend Tests"
     runs-on: windows-latest
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       # 1. Checkout kode dari repository
       - name: Checkout repository
@@ -38,16 +41,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. Setup environment variables for testing
-      - name: Setup test environment
-        run: |
-          echo "JWT_SECRET_KEY=ci-test-secret-key-12345" > .env
-          echo "ADMIN_USERNAME=admin" >> .env
-          echo "ADMIN_PASSWORD=admin" >> .env
-          echo "ALLOWED_ORIGINS=http://localhost:5173" >> .env
-          echo "JWT_ACCESS_TOKEN_EXPIRES=3600" >> .env
-
-      # 5. Run test suite
+      # 4. Run test suite
       - name: Run pytest
+        env:
+          JWT_SECRET_KEY: "ci-test-secret-key-12345"
+          ADMIN_USERNAME: "admin"
+          ADMIN_PASSWORD: "admin"
+          ALLOWED_ORIGINS: "http://localhost:5173"
+          JWT_ACCESS_TOKEN_EXPIRES: "3600"
         run: |
           python -m pytest tests/ -v --tb=short
