@@ -8,8 +8,10 @@ from flask import Blueprint, jsonify, request, send_from_directory, Response
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, func, cast, Integer
 from extensions import db
-from models import DataBerkas, ActivityLog
+from models import DataBerkas, ActivityLog, User
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from utils.decorators import superuser_required
+import magic
 
 berkas_bp = Blueprint('berkas_bp', __name__)
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
@@ -242,6 +244,11 @@ def upload_file():
     if ext not in allowed_extensions:
         return jsonify({'status': 'error', 'message': 'Hanya file JPG dan PDF yang diizinkan'}), 400
 
+    mime = magic.from_buffer(file.read(2048), mime=True)
+    file.seek(0)
+    if mime not in ['image/jpeg', 'application/pdf']:
+        return jsonify({'status': 'error', 'message': 'Tipe file tidak diizinkan'}), 400
+
     filename = secure_filename(file.filename)
     unique_filename = f"{int(time.time())}_{filename}"
     
@@ -306,13 +313,9 @@ def export_csv():
     return response
 
 @berkas_bp.route('/api/berkas/<no_berkas>', methods=['DELETE'])
-@jwt_required()
+@superuser_required
 def delete_berkas(no_berkas):
     identity = get_jwt_identity()
-    user = User.query.filter_by(username=identity).first()
-    if not user or user.role != 'superuser':
-        return jsonify(status='error', message='Akses ditolak'), 403
-        
     berkas = DataBerkas.query.filter_by(no_berkas=no_berkas).all()
     if not berkas:
         return jsonify(status='error', message='Berkas tidak ditemukan'), 404

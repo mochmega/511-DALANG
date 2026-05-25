@@ -34,14 +34,11 @@ export function AuthProvider({ children }) {
         // Token kadaluarsa atau dipalsukan — bersihkan semua
         clearAuth()
       }
-    } catch {
-      // Jika server tidak dapat diakses, izinkan masuk sementara
-      // dengan data yang sudah tersimpan (offline tolerance)
-      setAuthState({
-        token,
-        role: localStorage.getItem('role') || 'user',
-        username: localStorage.getItem('username') || ''
-      })
+    } catch (error) {
+      // Jika server tidak dapat diakses (network error), jangan izinkan masuk.
+      // Hal ini mencegah eksploitasi token yang sudah di-revoke.
+      console.error("Gagal terhubung ke server untuk validasi token:", error);
+      clearAuth()
     }
   }, [])
 

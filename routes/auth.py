@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify, request, send_file, Response
 from extensions import db
 from models import User
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from utils.decorators import superuser_required
 from werkzeug.security import check_password_hash, generate_password_hash
 import logging
 
@@ -41,12 +42,8 @@ def update_theme():
     return jsonify(status='error', message='User tidak ditemukan'), 404
 
 @auth_bp.route('/api/export-db', methods=['GET'])
-@jwt_required()
+@superuser_required
 def export_db():
-    identity = get_jwt_identity()
-    user = User.query.filter_by(username=identity).first()
-    if not user or user.role != 'superuser':
-        return jsonify(status='error', message='Akses ditolak. Hanya superuser yang dapat mengunduh database.'), 403
 
     zip_path = os.path.join(os.getcwd(), 'export_database.zip')
     try:
@@ -63,12 +60,8 @@ def export_db():
         return jsonify(status='error', message=str(e)), 500
 
 @auth_bp.route('/api/register', methods=['POST'])
-@jwt_required()
+@superuser_required
 def register():
-    identity = get_jwt_identity()
-    caller = User.query.filter_by(username=identity).first()
-    if not caller or caller.role != 'superuser':
-        return jsonify(status='error', message='Akses ditolak, hanya superuser yang bisa mendaftar akun'), 403
 
     data = request.json
     username = data.get('username')
@@ -92,22 +85,14 @@ def register():
     return jsonify(status='success', message=f'User {username} berhasil ditambahkan')
 
 @auth_bp.route('/api/users', methods=['GET'])
-@jwt_required()
+@superuser_required
 def get_users():
-    identity = get_jwt_identity()
-    caller = User.query.filter_by(username=identity).first()
-    if not caller or caller.role != 'superuser':
-        return jsonify(status='error', message='Akses ditolak'), 403
     users = User.query.all()
     return jsonify([{'username': u.username, 'role': u.role} for u in users])
 
 @auth_bp.route('/api/users/<username>', methods=['DELETE'])
-@jwt_required()
+@superuser_required
 def delete_user(username):
-    identity = get_jwt_identity()
-    caller = User.query.filter_by(username=identity).first()
-    if not caller or caller.role != 'superuser':
-        return jsonify(status='error', message='Akses ditolak'), 403
 
     user = User.query.filter_by(username=username).first()
     if not user:
@@ -144,12 +129,8 @@ def ganti_password():
     return jsonify({"status": "success", "message": "Password berhasil diubah"})
 
 @auth_bp.route('/api/register/bulk', methods=['POST'])
-@jwt_required()
+@superuser_required
 def register_bulk():
-    identity = get_jwt_identity()
-    caller = User.query.filter_by(username=identity).first()
-    if not caller or caller.role != 'superuser':
-        return jsonify(status='error', message='Akses ditolak, hanya superuser yang bisa import user massal'), 403
 
     if 'file' not in request.files:
         return jsonify(status='error', message='File tidak ditemukan'), 400

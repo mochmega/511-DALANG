@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '../context/AuthContext'
 
 export default function Dashboard() {
   const [stats, setStats] = useState({ total_rumah: "...", dipinjam: "...", activities: [] })
   const [loading, setLoading] = useState(true)
+  const { auth } = useAuth()
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
     fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { 'Authorization': `Bearer ${auth.token}` }
     })
       .then(res => {
         if (!res.ok) throw new Error("Server bermasalah")
