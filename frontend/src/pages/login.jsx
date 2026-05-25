@@ -8,8 +8,10 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const { showAlert } = useAlert()
-  const { login, updatePreferences } = useAuth()
-  const [isLightMode, setIsLightMode] = useState(document.documentElement.getAttribute('data-mode') === 'light')
+  const { login } = useAuth()
+  const [isLightMode, setIsLightMode] = useState(() => 
+    document.documentElement.getAttribute('data-mode') === 'light'
+  )
   
   const navigate = useNavigate()
 
@@ -34,7 +36,7 @@ export default function Login() {
       if (res.ok && data.status === 'success') {
         // Gunakan AuthContext login() — satu sumber kebenaran, bukan manipulasi localStorage langsung
         login(data.token, data.role, username, data.theme, data.mode)
-        navigate('/')
+        navigate('/dashboard')
       } else {
         showAlert(`Akses Ditolak: ${data.message || 'Username atau Password salah!'}`, "error")
       }

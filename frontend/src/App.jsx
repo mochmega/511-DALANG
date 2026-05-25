@@ -199,6 +199,7 @@ function AppLayout() {
         <main className="flex-1 overflow-y-auto p-8 relative z-10">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route path="/pencarian" element={<Pencarian />} />
             <Route path="/cari-dokumen" element={<CariDokumen />} />
             <Route path="/sirkulasi" element={<Sirkulasi />} />

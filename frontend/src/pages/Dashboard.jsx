@@ -31,6 +31,7 @@ export default function Dashboard() {
 
   // Fetch stats utama
   useEffect(() => {
+    if (!auth?.token) return
     fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`, {
       headers: { 'Authorization': `Bearer ${auth.token}` }
     })
@@ -45,7 +46,7 @@ export default function Dashboard() {
         setError(true)
         setStats({ total_rumah: 'ERROR', dipinjam: 'ERROR', terlambat: 0, activities: [] })
       })
-  }, [])
+  }, [auth?.token])
 
   // Fetch statistik chart — terpisah agar tidak blokir stats utama
   useEffect(() => {
