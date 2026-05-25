@@ -10,6 +10,9 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
-    strictPort: true  // Gagal dengan pesan jelas jika port sudah dipakai (tidak diam-diam naik ke port lain)
+    strictPort: true
+  },
+  optimizeDeps: {
+    include: ['recharts']
   }
 })
