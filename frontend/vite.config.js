@@ -13,6 +13,11 @@ export default defineConfig({
     strictPort: true
   },
   optimizeDeps: {
-    include: ['recharts', 'lodash']
+    include: [
+      'recharts',
+      'lodash',
+      'recharts/es6/chart/LineChart',
+      'recharts/es6/chart/PieChart'
+    ]
   }
 })
