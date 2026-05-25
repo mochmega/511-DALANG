@@ -9,7 +9,7 @@ import json
 # Add parent to path
 sys.path.insert(0, r'f:\APLIKASI GUDANG')
 
-from app import app
+from app import app, init_db
 from extensions import db
 from models import User, DataBerkas, Dokumen, ActivityLog
 from werkzeug.security import generate_password_hash
@@ -39,6 +39,7 @@ def run_tests():
     app.config['TESTING'] = True
     
     with app.app_context():
+        init_db()
         client = app.test_client()
         
         # ============================================================
@@ -49,13 +50,13 @@ def run_tests():
         print("="*60)
         
         # 1.1 Login with valid superuser
-        res = client.post('/api/login', json={'username': 'admin123', 'password': 'admin123'})
+        res = client.post('/api/login', json={'username': 'admin', 'password': 'admin'})
         data = res.get_json()
         su_token = data.get('token') if data else None
-        record("Auth", "Login superuser (admin123)", res.status_code == 200 and su_token is not None)
+        record("Auth", "Login superuser (admin)", res.status_code == 200 and su_token is not None)
         
         # 1.2 Login with wrong password
-        res = client.post('/api/login', json={'username': 'admin123', 'password': 'wrongpass'})
+        res = client.post('/api/login', json={'username': 'admin', 'password': 'wrongpass'})
         record("Auth", "Login wrong password returns 401", res.status_code == 401)
         
         # 1.3 Login with non-existent user
@@ -74,7 +75,7 @@ def run_tests():
         res = client.get('/api/me', headers=auth_header(su_token))
         data = res.get_json() if res.status_code == 200 else {}
         record("Auth", "GET /api/me returns user info", 
-               res.status_code == 200 and data.get('username') == 'admin123')
+               res.status_code == 200 and data.get('username') == 'admin')
         
         # ============================================================
         # PHASE 2: DASHBOARD
@@ -417,4 +418,6 @@ def run_tests():
         return passed, total, failed
 
 if __name__ == '__main__':
-    run_tests()
+    passed, total, failed = run_tests()
+    if failed > 0:
+        sys.exit(1)
