@@ -13,11 +13,13 @@ export default defineConfig({
     strictPort: true
   },
   optimizeDeps: {
-    include: [
-      'recharts',
-      'lodash',
-      'recharts/es6/chart/LineChart',
-      'recharts/es6/chart/PieChart'
-    ]
+    include: ['recharts', 'lodash'],
+    force: true
+  },
+  build: {
+    commonjsOptions: {
+      include: [/lodash/, /recharts/, /node_modules/],
+      transformMixedEsModules: true
+    }
   }
 })
