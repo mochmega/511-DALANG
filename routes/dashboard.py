@@ -3,8 +3,9 @@ import math
 from datetime import date
 from flask import Blueprint, jsonify, request
 from extensions import db
-from models import User, DataBerkas, ActivityLog
+from models import User, DataBerkas, Dokumen, ActivityLog
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import jsonify
 
 dashboard_bp = Blueprint('dashboard_bp', __name__)
 
@@ -121,3 +122,69 @@ def get_activity_log():
         "total_pages": math.ceil(total / limit) if limit > 0 else 0,
         "current_page": page
     })
+
+@dashboard_bp.route('/api/statistik', methods=['GET'])
+@jwt_required()
+def get_statistik():
+    try:
+        from sqlalchemy import func
+
+        # ── 1. Distribusi Jenis Arsip (Pie Chart) ──
+        # Ambil dari model Dokumen, field 'jenis'
+        distribusi_raw = db.session.query(
+            Dokumen.jenis,
+            func.count(Dokumen.id).label('total')
+        ).filter(
+            Dokumen.no_berkas.notlike('EKS-%')
+        ).group_by(Dokumen.jenis).all()
+
+        distribusi_jenis = [
+            {'name': row.jenis or 'Lainnya', 'value': row.total}
+            for row in distribusi_raw
+        ]
+
+        # ── 2. Top 5 WP berdasarkan jumlah berkas (Bar/List) ──
+        # Ambil dari DataBerkas, field 'nama'
+        top_wp_raw = db.session.query(
+            DataBerkas.nama,
+            func.count(DataBerkas.id).label('total')
+        ).filter(
+            DataBerkas.no_berkas.notlike('EKS-%'),
+            DataBerkas.nama.isnot(None)
+        ).group_by(DataBerkas.nama)\
+         .order_by(func.count(DataBerkas.id).desc())\
+         .limit(5).all()
+
+        top_wp = [
+            {'nama': row.nama, 'total': row.total}
+            for row in top_wp_raw
+        ]
+
+        # ── 3. Tren Peminjaman 6 Bulan Terakhir (Line Chart) ──
+        # Hitung dari Dokumen yang status-nya 'Dipinjam' per bulan
+        tren_peminjaman = []
+        today = date.today()
+        for i in range(5, -1, -1):
+            # Hitung bulan mundur
+            total_months = today.month - 1 - i
+            year = today.year + (total_months // 12)
+            month = (total_months % 12) + 1
+            bulan_label = f"{year}-{month:02d}"
+
+            jumlah = db.session.query(func.count(Dokumen.id))\
+                .filter(
+                    Dokumen.status == 'Dipinjam',
+                    Dokumen.tanggal_pinjam.like(f"{bulan_label}%")
+                ).scalar() or 0
+
+            tren_peminjaman.append({'bulan': bulan_label, 'jumlah': jumlah})
+
+        return jsonify({
+            'status': 'success',
+            'distribusi_jenis': distribusi_jenis,
+            'top_wp': top_wp,
+            'tren_peminjaman': tren_peminjaman
+        }), 200
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
