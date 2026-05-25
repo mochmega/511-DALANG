@@ -66,7 +66,18 @@ export default function Pencarian() {
         return acc
       }, {})
 
-      setHasil(Object.values(groupedData))
+      const groupedWithId = {}
+      Object.entries(groupedData).forEach(([key, val]) => {
+        groupedWithId[key] = {
+          ...val,
+          dokumenList: val.dokumenList.map((doc, i) => ({
+            ...doc,
+            _id: doc._id || `${key}_${i}_${Date.now()}`
+          }))
+        }
+      })
+
+      setHasil(Object.values(groupedWithId))
       setSudahCari(true)
       setExpandedCabang({})
     } catch (error) {
@@ -131,6 +142,10 @@ export default function Pencarian() {
   }
 
   const bukaModalEditSatu = (doc, index) => {
+    if (index === -1) {
+      showAlert("Terjadi kesalahan: dokumen tidak ditemukan. Coba refresh halaman.", "error")
+      return
+    }
     setEditDocIndex(index)
     setEditDocData({ ...doc })
     setSelectedFile(null)
@@ -178,6 +193,10 @@ export default function Pencarian() {
   }
 
   const hapusDokumenPermanen = async (realIndex) => {
+    if (realIndex === -1) {
+      showAlert("Terjadi kesalahan: dokumen tidak ditemukan. Coba refresh halaman.", "error")
+      return
+    }
     const isConfirmed = await showConfirm("Yakin ingin menghapus dokumen ini dari berkas?")
     if(!isConfirmed) return;
     const docToHapus = selectedMap.dokumenList[realIndex]
@@ -365,9 +384,9 @@ export default function Pencarian() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50 text-slate-300">
-                    {filteredDocs.map((doc, index) => {
-                       const realIndex = selectedMap.dokumenList.findIndex(d => d === doc)
-                       return (
+                     {filteredDocs.map((doc, index) => {
+                        const realIndex = selectedMap.dokumenList.findIndex(d => d._id === doc._id)
+                        return (
                         <tr key={index} className="hover:bg-slate-800/30 transition-colors">
                           <td className="py-3 px-4 font-semibold text-theme-400">{highlightText(doc.pemilik || '-', searchDoc)}</td>
                           <td className="py-3 px-4 text-center font-bold text-white">{highlightText(doc.wadah || selectedMap.no_berkas, searchDoc)}</td>
