@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 export default function Dashboard() {
   const [stats, setStats] = useState({ total_rumah: "...", dipinjam: "...", activities: [] })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const { auth } = useAuth()
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export default function Dashboard() {
       .catch(err => {
         console.error("Gagal memuat dari backend:", err)
         setLoading(false)
+        setError(true)
         setStats({ total_rumah: "ERROR", dipinjam: "ERROR", activities: [] })
       })
   }, [])
@@ -33,6 +35,16 @@ export default function Dashboard() {
         </h2>
         <p className="text-slate-400 mt-1">Ringkasan status penyimpanan berkas di gudang saat ini.</p>
       </div>
+
+      {error && (
+        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-4 rounded-xl mb-8 flex items-center gap-3">
+          <span className="text-2xl">⚠️</span>
+          <div>
+            <h3 className="font-bold">Koneksi Terputus</h3>
+            <p className="text-sm">Gagal memuat data statistik dari server. Periksa koneksi internet atau status backend Anda.</p>
+          </div>
+        </div>
+      )}
 
       {/* GRID ATAS: KARTU STATISTIK */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

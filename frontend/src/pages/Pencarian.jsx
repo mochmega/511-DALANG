@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { debounce } from 'lodash'
 import { useAlert } from '../context/AlertContext'
 import { useAuth } from '../context/AuthContext'
 import UniversalSearch from '../components/UniversalSearch'
 import Pagination from '../components/Pagination'
 import { highlightText } from '../utils/highlight'
+import { simpanKeDB } from '../utils/api'
 
 // KOMPONEN INPUT STYLING KHUSUS (Biar nggak nulis class berulang kali di form modal)
   const InputLabel = ({ children }) => <label className="block text-sm font-semibold text-slate-300 mb-1">{children}</label>
@@ -43,7 +43,7 @@ export default function Pencarian() {
     try { return JSON.parse(isi) } catch (e) { return [] }
   }
 
-  const handleCari = async (currentPage = page, currentLimit = limit) => {
+  const handleCari = useCallback(async (currentPage = page, currentLimit = limit) => {
     try {
       const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${encodeURIComponent(query)}&by=${encodeURIComponent(searchBy)}&page=${currentPage}&limit=${currentLimit}`, {
@@ -83,8 +83,9 @@ export default function Pencarian() {
       setExpandedCabang({})
     } catch (error) {
       console.error("Gagal mencari data:", error)
+      showAlert("Gagal memuat data. Periksa koneksi ke server.", "error")
     }
-  } 
+  }, [auth?.token, query, searchBy, showAlert, page, limit])
 
   useEffect(() => {
     setPage(1)
@@ -92,7 +93,7 @@ export default function Pencarian() {
       handleCari(1, limit)
     }, 500)
     return () => clearTimeout(timer)
-  }, [query, searchBy, limit])
+  }, [handleCari, limit])
 
   const handlePageChange = (newPage) => {
     setPage(newPage)
@@ -176,22 +177,6 @@ export default function Pencarian() {
     } catch (error) { return null }
   }
 
-  const simpanKeDB = async (noBerkas, newList, log_action = null, log_desc = null) => {
-    try {
-      const username = auth?.username || 'Sistem'
-      const token = auth?.token
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas/update-isi`, {
-        method: 'POST', 
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }, 
-        body: JSON.stringify({ no_berkas: noBerkas, isi_berkas: newList, log_action, log_desc, username })
-      })
-      const data = await res.json()
-      return data.status === 'success'
-    } catch (error) { return false }
-  }
 
   const hapusDokumenPermanen = async (realIndex) => {
     if (realIndex === -1) {
@@ -204,7 +189,7 @@ export default function Pencarian() {
     const newList = selectedMap.dokumenList.filter((_, i) => i !== realIndex)
     
     const logDesc = `Dokumen ${docToHapus.nama} dihapus dari rumah berkas ${selectedMap.no_berkas}`
-    const success = await simpanKeDB(selectedMap.no_berkas, newList, 'Mutasi', logDesc)
+    const success = await simpanKeDB(import.meta.env.VITE_API_URL, auth, selectedMap.no_berkas, newList, 'Mutasi', logDesc)
     if(success) { setSelectedMap({ ...selectedMap, dokumenList: newList }); handleCari(); }
   }
 
@@ -219,8 +204,8 @@ export default function Pencarian() {
     const newList = [...selectedMap.dokumenList]
     newList[editDocIndex] = { ...editDocData, file_scan: namaFileFinal }
     
-    const logDesc = `Dokumen ${editDocData.nama} diedit dalam rumah berkas ${selectedMap.no_berkas}`
-    const success = await simpanKeDB(selectedMap.no_berkas, newList, 'Mutasi', logDesc)
+    const logDesc = `Mengubah data dokumen: ${editDocData.nama}`
+    const success = await simpanKeDB(import.meta.env.VITE_API_URL, auth, selectedMap.no_berkas, newList, 'Pembaruan', logDesc)
     if(success) { setSelectedMap({ ...selectedMap, dokumenList: newList }); setModalMode('lihat'); handleCari(); }
     setIsUploading(false)
   }
@@ -236,8 +221,8 @@ export default function Pencarian() {
     const dataSiapKirim = { ...newDoc, file_scan: namaFileFinal, status: newDoc.status || 'Di Gudang' }
     const newList = [...selectedMap.dokumenList, dataSiapKirim]
     
-    const logDesc = `Dokumen ${newDoc.nama} ditambahkan ke rumah berkas ${selectedMap.no_berkas}`
-    const success = await simpanKeDB(selectedMap.no_berkas, newList, 'Registrasi', logDesc)
+    const logDesc = `Menambahkan dokumen baru: ${newDoc.nama}`
+    const success = await simpanKeDB(import.meta.env.VITE_API_URL, auth, selectedMap.no_berkas, newList, 'Penambahan', logDesc)
     if(success) { setSelectedMap({ ...selectedMap, dokumenList: newList }); setModalMode('lihat'); handleCari(); }
     setIsUploading(false)
   }

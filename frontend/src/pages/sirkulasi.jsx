@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import UniversalSearch from '../components/UniversalSearch'
 import Pagination from '../components/Pagination'
 import { highlightText } from '../utils/highlight'
 import { useAlert } from '../context/AlertContext'
 import { useAuth } from '../context/AuthContext'
+import { simpanKeDB } from '../utils/api'
 
 export default function Sirkulasi() {
   const [query, setQuery] = useState('')
@@ -46,7 +47,7 @@ export default function Sirkulasi() {
   }
 
   // FUNGSI PENCARIAN
-  const handleCari = async (currentPage = page, currentLimit = limit) => {
+  const handleCari = useCallback(async (currentPage = page, currentLimit = limit) => {
     try {
       const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${encodeURIComponent(query)}&by=${encodeURIComponent(searchBy)}&page=${currentPage}&limit=${currentLimit}`, {
@@ -54,7 +55,7 @@ export default function Sirkulasi() {
       })
       const rawResponse = await res.json()
       
-      const rawData = Array.isArray(rawResponse) ? rawResponse : (rawResponse.data || [])
+      const rawData = Array.isArray(rawResponse.data) ? rawResponse.data : []
       setTotalPages(rawResponse.total_pages || 1)
       setTotalItems(rawResponse.total_items || rawData.length)
       setPage(rawResponse.current_page || 1)
@@ -76,8 +77,9 @@ export default function Sirkulasi() {
       setSudahCari(true)
     } catch (error) {
       console.error("Gagal mencari data:", error)
+      showAlert("Gagal memuat data. Periksa koneksi ke server.", "error")
     }
-  }
+  }, [auth?.token, query, searchBy, showAlert, page, limit])
 
   // --- ROBOT LIVE SEARCH AUTOMATIC ---
   useEffect(() => {
@@ -86,31 +88,11 @@ export default function Sirkulasi() {
       handleCari(1, limit)
     }, 500)
     return () => clearTimeout(timer)
-  }, [query, searchBy, limit])
+  }, [handleCari, limit])
 
   const handlePageChange = (newPage) => {
     setPage(newPage)
     handleCari(newPage, limit)
-  }
-
-  const simpanKeDB = async (noBerkas, newList, log_action = null, log_desc = null) => {
-    try {
-      const username = auth?.username || 'Sistem'
-      const token = auth?.token
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas/update-isi`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ no_berkas: noBerkas, isi_berkas: newList, log_action, log_desc, username })
-      })
-      const data = await res.json()
-      return data.status === 'success'
-    } catch (error) {
-      console.error(error)
-      return false
-    }
   }
 
   // LOGIKA PROSES PINJAM
@@ -127,7 +109,7 @@ export default function Sirkulasi() {
     }
 
     const logDesc = `Dokumen ${newList[docIndex].nama} diajukan pinjam oleh ${peminjam}`
-    const success = await simpanKeDB(selectedMap.no_berkas, newList, 'Pinjam', logDesc)
+    const success = await simpanKeDB(import.meta.env.VITE_API_URL, auth, selectedMap.no_berkas, newList, 'Pinjam', logDesc)
     if (success) {
       setSelectedMap({ ...selectedMap, dokumenList: newList })
       handleCari()
@@ -147,7 +129,7 @@ export default function Sirkulasi() {
     }
 
     const logDesc = `Dokumen ${newList[docIndex].nama} dikembalikan ke rak`
-    const success = await simpanKeDB(selectedMap.no_berkas, newList, 'Kembali', logDesc)
+    const success = await simpanKeDB(import.meta.env.VITE_API_URL, auth, selectedMap.no_berkas, newList, 'Kembali', logDesc)
     if (success) {
       setSelectedMap({ ...selectedMap, dokumenList: newList })
       handleCari()

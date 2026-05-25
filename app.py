@@ -5,13 +5,12 @@ from datetime import timedelta
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
-from extensions import db, jwt
+from extensions import db, jwt, limiter
 from models import User, generate_password_hash
 from routes.auth import auth_bp
 from routes.berkas import berkas_bp
 from routes.sirkulasi import sirkulasi_bp
 from routes.dashboard import dashboard_bp
-import datetime
 import threading
 import time
 import shutil
@@ -74,6 +73,7 @@ if "http://localhost:5173" in allowed_origins and "http://127.0.0.1:5173" not in
 CORS(app, origins=allowed_origins, supports_credentials=True)
 db.init_app(app)
 jwt.init_app(app)
+limiter.init_app(app)
 
 # Daftar Blueprint
 app.register_blueprint(auth_bp)

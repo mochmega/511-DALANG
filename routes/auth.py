@@ -7,7 +7,8 @@ from io import StringIO
 from flask import Blueprint, jsonify, request, send_file, Response
 from extensions import db
 from models import User
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+from extensions import limiter
 from utils.decorators import superuser_required
 from werkzeug.security import check_password_hash, generate_password_hash
 import logging
@@ -17,6 +18,7 @@ logger = logging.getLogger('gudang.routes.auth')
 auth_bp = Blueprint('auth_bp', __name__)
 
 @auth_bp.route('/api/login', methods=['POST'])
+@limiter.limit("20 per minute")
 def login():
     data = request.json
     user = User.query.filter_by(username=data.get('username')).first()
@@ -27,7 +29,7 @@ def login():
     
     return jsonify(status='error', message='Username atau Password salah'), 401
 
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+
 
 @auth_bp.route('/api/validate-token', methods=['GET'])
 @jwt_required()

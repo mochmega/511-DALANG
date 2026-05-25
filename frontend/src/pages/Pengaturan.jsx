@@ -151,7 +151,6 @@ export default function Pengaturan() {
   }
 
   const deleteUser = async (username) => {
-    if (username === 'admin123') return showAlert("Superuser utama tidak bisa dihapus!", "error")
     const isConfirmed = await showConfirm(`Yakin hapus user ${username}?`)
     if (!isConfirmed) return
 
