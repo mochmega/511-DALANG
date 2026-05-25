@@ -50,4 +50,16 @@ jobs:
           ALLOWED_ORIGINS: "http://localhost:5173"
           JWT_ACCESS_TOKEN_EXPIRES: "3600"
         run: |
-          python -m pytest tests/ -v --tb=short
+          python -m pytest tests/test_api.py -v --tb=short
+
+      # 5. Run E2E Test Suite
+      - name: Run E2E Tests
+        env:
+          JWT_SECRET_KEY: "ci-test-secret-key-12345"
+          ADMIN_USERNAME: "admin"
+          ADMIN_PASSWORD: "admin"
+          ALLOWED_ORIGINS: "http://localhost:5173"
+          JWT_ACCESS_TOKEN_EXPIRES: "3600"
+          PYTHONIOENCODING: "utf-8"
+        run: |
+          python tests/test_e2e_full.py

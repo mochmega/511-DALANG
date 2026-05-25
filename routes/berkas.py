@@ -12,6 +12,7 @@ from extensions import db
 from models import DataBerkas, ActivityLog, User
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils.decorators import superuser_required
+from extensions import limiter
 import magic
 
 berkas_bp = Blueprint('berkas_bp', __name__)
@@ -185,7 +186,7 @@ def update_isi_berkas():
         )
         db.session.add(new_doc)
         
-    data_berkas.isi_berkas = json.dumps(full_doc_list) if full_doc_list else '[]'
+    # data_berkas.isi_berkas = json.dumps(full_doc_list) if full_doc_list else '[]' # MED-2: Hentikan double-write
 
     if log_action and log_desc:
         new_log = ActivityLog(action_type=log_action, description=log_desc, username=username)
@@ -232,6 +233,12 @@ def saran_nomor():
 @berkas_bp.route('/api/registrasi', methods=['POST'])
 @jwt_required()
 def proses_registrasi():
+    from models import User
+    identity = get_jwt_identity()
+    user = User.query.filter_by(username=identity).first()
+    if not user or user.role == 'user':
+        return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+
     data = request.get_json()
     no_berkas = data.get('no_berkas')
     nama = data.get('nama')
@@ -303,6 +310,7 @@ def get_file(filepath):
 
 @berkas_bp.route('/api/export/csv', methods=['GET'])
 @jwt_required()
+@limiter.limit("5 per minute")
 def export_csv():
     rows = DataBerkas.query.order_by(cast(DataBerkas.no_berkas, Integer).asc(), DataBerkas.nitku.asc()).all()
 
@@ -355,6 +363,7 @@ def export_csv():
 
 @berkas_bp.route('/api/dokumen/cari', methods=['GET'])
 @jwt_required()
+@limiter.limit("20 per minute")
 def cari_dokumen():
     """
     Sprint 4 — Pencarian dokumen lintas berkas.
@@ -426,6 +435,7 @@ def cari_dokumen():
 
 
 @berkas_bp.route('/api/berkas/<no_berkas>', methods=['DELETE'])
+@jwt_required()
 @superuser_required
 def delete_berkas(no_berkas):
     identity = get_jwt_identity()

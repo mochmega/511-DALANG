@@ -87,6 +87,9 @@ def proses_mutasi():
         
         row.no_berkas = new_no_berkas
             
+    from models import ActivityLog
+    new_log = ActivityLog(action_type='Mutasi', description=f'Mutasi berkas {no_berkas} — {alasan}', username=identity)
+    db.session.add(new_log)
     db.session.commit()
     return jsonify({'status': 'success', 'message': f'Berkas {no_berkas} berhasil dimutasi!'})
 
@@ -105,6 +108,8 @@ def proses_mutasi_bulk():
     
     if not no_berkas_list:
         return jsonify({'status': 'error', 'message': 'Daftar berkas kosong'}), 400
+    if len(no_berkas_list) > 100:
+        return jsonify({'status': 'error', 'message': 'Maksimal 100 item untuk bulk mutasi'}), 400
         
     berhasil = 0
     for no_berkas in no_berkas_list:
@@ -127,5 +132,8 @@ def proses_mutasi_bulk():
                 row.no_berkas = new_no_berkas
             berhasil += 1
             
+    from models import ActivityLog
+    new_log = ActivityLog(action_type='Mutasi', description=f'Mutasi bulk {berhasil} berkas — {alasan}', username=identity)
+    db.session.add(new_log)
     db.session.commit()
     return jsonify({'status': 'success', 'message': f'{berhasil} Wajib Pajak berhasil dimutasi!'})

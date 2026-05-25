@@ -201,6 +201,7 @@ def register_bulk():
 
 @auth_bp.route('/api/register/template', methods=['GET'])
 @jwt_required()
+@superuser_required
 def download_csv_template():
     si = StringIO()
     cw = csv.writer(si)

@@ -11,6 +11,7 @@ import LogAktivitas from './pages/LogAktivitas'
 import CariDokumen from './pages/CariDokumen'
 import { useAlert } from './context/AlertContext'
 import { useAuth } from './context/AuthContext'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // ==========================================
 // KOMPONEN SATPAM (PRIVATE ROUTE) — Versi Aman
@@ -39,7 +40,16 @@ const PrivateRoute = ({ children }) => {
 const RoleRoute = ({ children, allowedRoles }) => {
   const { auth } = useAuth()
   if (auth === null) return null // Tunggu, jangan redirect dulu
-  if (!allowedRoles.includes(auth?.role)) return <Navigate to="/" replace />
+  if (!allowedRoles.includes(auth?.role)) return (
+    <div className="flex flex-col items-center justify-center h-full text-center py-20">
+      <div className="bg-rose-500/10 text-rose-400 p-6 rounded-2xl border border-rose-500/30 max-w-md shadow-lg shadow-rose-500/5">
+        <svg className="w-16 h-16 mx-auto mb-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <h2 className="text-2xl font-black mb-2 uppercase tracking-wide">Akses Ditolak</h2>
+        <p className="font-medium opacity-80 mb-6">Maaf, tingkat akses akun Anda tidak memiliki izin untuk halaman ini.</p>
+        <Link to="/" className="px-6 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold rounded-lg transition-all border border-rose-500/40">Kembali ke Beranda</Link>
+      </div>
+    </div>
+  )
   return children
 }
 
@@ -197,17 +207,19 @@ function AppLayout() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-8 relative z-10">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Navigate to="/" replace />} />
-            <Route path="/pencarian" element={<Pencarian />} />
-            <Route path="/cari-dokumen" element={<CariDokumen />} />
-            <Route path="/sirkulasi" element={<Sirkulasi />} />
-            <Route path="/mutasi" element={<RoleRoute allowedRoles={['superuser','petugas']}><Mutasi /></RoleRoute>} />
-            <Route path="/registrasi" element={<RoleRoute allowedRoles={['superuser','petugas']}><Registrasi /></RoleRoute>} />
-			<Route path="/log" element={<LogAktivitas />} />
-			<Route path="/pengaturan" element={<Pengaturan />} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Navigate to="/" replace />} />
+              <Route path="/pencarian" element={<Pencarian />} />
+              <Route path="/cari-dokumen" element={<CariDokumen />} />
+              <Route path="/sirkulasi" element={<Sirkulasi />} />
+              <Route path="/mutasi" element={<RoleRoute allowedRoles={['superuser','petugas']}><Mutasi /></RoleRoute>} />
+              <Route path="/registrasi" element={<RoleRoute allowedRoles={['superuser','petugas']}><Registrasi /></RoleRoute>} />
+              <Route path="/log" element={<LogAktivitas />} />
+              <Route path="/pengaturan" element={<Pengaturan />} />
+            </Routes>
+          </ErrorBoundary>
         </main>
       </div>
     </div>
