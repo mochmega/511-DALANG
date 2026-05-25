@@ -1,6 +1,7 @@
 # File: app.py
 import os
 import logging
+from datetime import timedelta
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
@@ -27,6 +28,12 @@ secret = os.environ.get("JWT_SECRET_KEY")
 if not secret:
     raise RuntimeError("FATAL: JWT_SECRET_KEY belum diset di .env!")
 app.config['JWT_SECRET_KEY'] = secret
+
+# JWT token expiry — baca dari .env, default 8 jam jika tidak diset
+_expires_seconds = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', 28800))
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(seconds=_expires_seconds)
+logger.info(f"JWT token expiry: {_expires_seconds // 3600} jam ({_expires_seconds} detik)")
+
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # Limit uploads to 20 MB
 
 # Fix #8: Restrict CORS to known origins only
