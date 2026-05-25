@@ -30,8 +30,9 @@ def get_dipinjam():
                         'doc_index': index,
                         'dokumen': doc
                     })
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger('gudang').error(f"JSON Corrupt pada Berkas {row.no_berkas}: {str(e)}")
 
     total = len(dipinjam_list)
     total_pages = math.ceil(total / limit) if limit > 0 else 1
@@ -70,8 +71,9 @@ def proses_mutasi():
                 for doc in dokumen_list:
                     doc['status'] = 'Dimutasi'
                 row.isi_berkas = json.dumps(dokumen_list)
-            except:
-                pass 
+            except Exception as e:
+                import logging
+                logging.getLogger('gudang').error(f"JSON Corrupt saat mutasi Berkas {row.no_berkas}: {str(e)}")
         
         row.no_berkas = new_no_berkas
             
@@ -102,8 +104,9 @@ def proses_mutasi_bulk():
                         for doc in dokumen_list:
                             doc['status'] = 'Dimutasi'
                         row.isi_berkas = json.dumps(dokumen_list)
-                    except:
-                        pass 
+                    except Exception as e:
+                        import logging
+                        logging.getLogger('gudang').error(f"JSON Corrupt saat mutasi bulk Berkas {row.no_berkas}: {str(e)}")
                 
                 row.no_berkas = new_no_berkas
             berhasil += 1

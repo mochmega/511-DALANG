@@ -21,6 +21,22 @@ export default function Pengaturan() {
   const [csvFile, setCsvFile] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
 
+  // State Server Storage
+  const [storageInfo, setStorageInfo] = useState(null)
+  const [loadingStorage, setLoadingStorage] = useState(false)
+
+  useEffect(() => {
+    if (activeTab === 'server' && role === 'superuser') {
+      setLoadingStorage(true)
+      fetch(`${import.meta.env.VITE_API_URL}/api/server/storage`, {
+        headers: { 'Authorization': `Bearer ${auth?.token}` }
+      })
+        .then(r => r.json())
+        .then(d => { setStorageInfo(d); setLoadingStorage(false) })
+        .catch(() => setLoadingStorage(false))
+    }
+  }, [activeTab, auth?.token, role])
+
   // State Ganti Password
   const [passwordLama, setPasswordLama] = useState("")
   const [passwordBaru, setPasswordBaru] = useState("")
@@ -170,7 +186,10 @@ export default function Pengaturan() {
         <button className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'profil' ? 'bg-theme-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`} onClick={() => setActiveTab('profil')}>Profil & Keamanan</button>
         <button className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'tema' ? 'bg-theme-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`} onClick={() => setActiveTab('tema')}>Tampilan</button>
         {role === 'superuser' && (
-          <button className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'user' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`} onClick={() => setActiveTab('user')}>Manajemen User</button>
+          <>
+            <button className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'user' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`} onClick={() => setActiveTab('user')}>Manajemen User</button>
+            <button className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'server' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`} onClick={() => setActiveTab('server')}>🖥️ Server</button>
+          </>
         )}
       </div>
 
@@ -341,6 +360,50 @@ export default function Pengaturan() {
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* TAB 4: SERVER STORAGE */}
+        {activeTab === 'server' && role === 'superuser' && (
+          <div className="space-y-6 animate-fade-in">
+            <h3 className="text-lg font-bold text-white mb-6">🖥️ Informasi Server</h3>
+            {loadingStorage ? <p className="text-slate-400">Memuat info penyimpanan...</p> : storageInfo && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-slate-800 p-6 rounded-xl col-span-1 md:col-span-2">
+                  <p className="text-sm font-bold text-slate-300 mb-2">Penyimpanan Disk Sistem</p>
+                  <div className="flex justify-between text-sm mb-1 text-slate-400">
+                    <span>Terpakai: {storageInfo.disk.used} ({storageInfo.disk.percent}%)</span>
+                    <span>Total: {storageInfo.disk.total}</span>
+                  </div>
+                  <div style={{background:'#334155', borderRadius:8, height:16}} className="overflow-hidden">
+                    <div style={{
+                      width: `${storageInfo.disk.percent}%`,
+                      background: storageInfo.disk.percent > 85 ? '#ef4444' : '#10b981',
+                      height: '100%'
+                    }} className="transition-all duration-1000" />
+                  </div>
+                  <p className="text-sm text-slate-400 mt-2">Sisa: {storageInfo.disk.free}</p>
+                  {storageInfo.disk.percent > 85 && (
+                    <div className="mt-4 p-3 bg-red-900/40 text-red-400 border border-red-800/50 rounded-lg text-sm flex gap-2">
+                      <span>⚠️</span> Disk hampir penuh! Segera hapus backup lama atau pindahkan data.
+                    </div>
+                  )}
+                </div>
+                
+                <div className="bg-slate-800 p-6 rounded-xl">
+                  <h4 className="font-bold text-slate-300 mb-4 border-b border-slate-700 pb-2">Rincian Data Aplikasi</h4>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between"><span className="text-slate-400">📁 Folder Uploads:</span> <span className="font-mono text-emerald-400">{storageInfo.uploads.size}</span></div>
+                    <div className="text-xs text-slate-500 text-right -mt-2 mb-2">Total file: {storageInfo.uploads.file_count} file scan</div>
+                    
+                    <div className="flex justify-between"><span className="text-slate-400">🗄️ Database Induk:</span> <span className="font-mono text-emerald-400">{storageInfo.database.size}</span></div>
+                    
+                    <div className="flex justify-between"><span className="text-slate-400">💾 Cadangan (Backup):</span> <span className="font-mono text-emerald-400">{storageInfo.backups.size}</span></div>
+                    <div className="text-xs text-slate-500 text-right -mt-2">Total file: {storageInfo.backups.count} database zip</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

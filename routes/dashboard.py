@@ -1,6 +1,6 @@
 import json
 import math
-from datetime import date
+from datetime import date, timedelta
 from flask import Blueprint, jsonify, request
 from extensions import db
 from models import User, DataBerkas, Dokumen, ActivityLog
@@ -20,37 +20,26 @@ def get_dashboard_stats():
         .filter(DataBerkas.no_berkas.notlike('EKS-%'))\
         .distinct().count()
     
-    # Hanya pantau dokumen yang dipinjam dari WP yang masih aktif
-    berkas_items = DataBerkas.query\
-        .filter(DataBerkas.isi_berkas != 'Belum diupdate')\
-        .filter(DataBerkas.isi_berkas.isnot(None))\
-        .filter(DataBerkas.no_berkas.notlike('EKS-%')).all()
-    
-    total_dipinjam = 0
-    for row in berkas_items:
-        try:
-            if not row.isi_berkas: continue
-            dokumen_list = json.loads(row.isi_berkas)
-            for doc in dokumen_list:
-                if doc.get('status') == 'Dipinjam':
-                    total_dipinjam += 1
-        except Exception:
-            pass 
+    # Hanya pantau dokumen dari WP yang masih aktif (Bukan EKS)
+    # Sedang Dipinjam
+    total_dipinjam = db.session.query(Dokumen).join(
+        DataBerkas, Dokumen.no_berkas == DataBerkas.no_berkas
+    ).filter(
+        DataBerkas.no_berkas.notlike('EKS-%'),
+        Dokumen.status == 'Dipinjam'
+    ).count()
             
-    # ✅ Sprint 3.2 — Hitung dokumen terlambat kembali
+    # Terlambat Kembali
     hari_ini = date.today().isoformat()
-    total_terlambat = 0
-    for row in berkas_items:
-        try:
-            if not row.isi_berkas:
-                continue
-            dokumen_list = json.loads(row.isi_berkas)
-            for doc in dokumen_list:
-                batas = doc.get('batas_kembali', '')
-                if doc.get('status') == 'Dipinjam' and batas and batas < hari_ini:
-                    total_terlambat += 1
-        except Exception:
-            pass
+    total_terlambat = db.session.query(Dokumen).join(
+        DataBerkas, Dokumen.no_berkas == DataBerkas.no_berkas
+    ).filter(
+        DataBerkas.no_berkas.notlike('EKS-%'),
+        Dokumen.status == 'Dipinjam',
+        Dokumen.batas_kembali != None,
+        Dokumen.batas_kembali != '',
+        Dokumen.batas_kembali < hari_ini
+    ).count()
             
     # Fetch recent activities based on role
     query = ActivityLog.query
@@ -139,20 +128,23 @@ def get_statistik():
         ).group_by(Dokumen.jenis).all()
 
         distribusi_jenis = [
-            {'name': row.jenis or 'Lainnya', 'value': row.total}
+            {'jenis': row.jenis or 'Lainnya', 'total': row.total}
             for row in distribusi_raw
         ]
 
         # ── 2. Top 5 WP berdasarkan jumlah berkas (Bar/List) ──
-        # Ambil dari DataBerkas, field 'nama'
+        # Ambil dari DataBerkas yang berelasi dengan Dokumen berstatus Dipinjam
         top_wp_raw = db.session.query(
             DataBerkas.nama,
-            func.count(DataBerkas.id).label('total')
+            func.count(Dokumen.id).label('total')
+        ).join(
+            Dokumen, DataBerkas.no_berkas == Dokumen.no_berkas
         ).filter(
             DataBerkas.no_berkas.notlike('EKS-%'),
-            DataBerkas.nama.isnot(None)
+            DataBerkas.nama.isnot(None),
+            Dokumen.status == 'Dipinjam'
         ).group_by(DataBerkas.nama)\
-         .order_by(func.count(DataBerkas.id).desc())\
+         .order_by(func.count(Dokumen.id).desc())\
          .limit(5).all()
 
         top_wp = [
@@ -166,10 +158,11 @@ def get_statistik():
         today = date.today()
         for i in range(5, -1, -1):
             # Hitung bulan mundur
-            total_months = today.month - 1 - i
-            year = today.year + (total_months // 12)
-            month = (total_months % 12) + 1
+            target_date = today.replace(day=1) - timedelta(days=i * 30)
+            year = target_date.year
+            month = target_date.month
             bulan_label = f"{year}-{month:02d}"
+            label_display = target_date.strftime('%b %Y') # Contoh: May 2026
 
             jumlah = db.session.query(func.count(Dokumen.id))\
                 .filter(
@@ -177,7 +170,7 @@ def get_statistik():
                     Dokumen.tanggal_pinjam.like(f"{bulan_label}%")
                 ).scalar() or 0
 
-            tren_peminjaman.append({'bulan': bulan_label, 'jumlah': jumlah})
+            tren_peminjaman.append({'label': label_display, 'total': jumlah})
 
         return jsonify({
             'status': 'success',
@@ -186,5 +179,80 @@ def get_statistik():
             'tren_peminjaman': tren_peminjaman
         }), 200
 
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@dashboard_bp.route('/api/server/storage', methods=['GET'])
+@jwt_required()
+def get_storage_info():
+    from utils.decorators import superuser_required
+    identity = get_jwt_identity()
+    user = User.query.filter_by(username=identity).first()
+    if not user or user.role != 'superuser':
+        return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+    
+    try:
+        import shutil
+        import os
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        ROOT_DIR = os.path.join(BASE_DIR, '..')
+        
+        disk = shutil.disk_usage(ROOT_DIR)
+        
+        upload_dir = os.path.join(ROOT_DIR, 'uploads')
+        uploads_size = 0
+        upload_file_count = 0
+        if os.path.exists(upload_dir):
+            for dirpath, dirnames, filenames in os.walk(upload_dir):
+                for f in filenames:
+                    fp = os.path.join(dirpath, f)
+                    uploads_size += os.path.getsize(fp)
+                    upload_file_count += 1
+        
+        db_path = os.path.join(ROOT_DIR, 'instance', 'gudang.db')
+        db_size = os.path.getsize(db_path) if os.path.exists(db_path) else 0
+        
+        backup_dir = os.path.join(ROOT_DIR, 'backups')
+        backup_size = 0
+        backup_count = 0
+        if os.path.exists(backup_dir):
+            for f in os.listdir(backup_dir):
+                fp = os.path.join(backup_dir, f)
+                if os.path.isfile(fp):
+                    backup_size += os.path.getsize(fp)
+                    backup_count += 1
+        
+        def fmt(b):
+            for unit in ['B', 'KB', 'MB', 'GB']:
+                if b < 1024:
+                    return f"{b:.1f} {unit}"
+                b /= 1024
+            return f"{b:.1f} TB"
+        
+        return jsonify({
+            'status': 'success',
+            'disk': {
+                'total': fmt(disk.total),
+                'used': fmt(disk.used),
+                'free': fmt(disk.free),
+                'percent': round(disk.used / disk.total * 100, 1),
+                'total_bytes': disk.total,
+                'used_bytes': disk.used,
+                'free_bytes': disk.free,
+            },
+            'uploads': {
+                'size': fmt(uploads_size),
+                'size_bytes': uploads_size,
+                'file_count': upload_file_count
+            },
+            'database': {
+                'size': fmt(db_size),
+                'size_bytes': db_size
+            },
+            'backups': {
+                'size': fmt(backup_size),
+                'count': backup_count
+            }
+        })
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500

@@ -160,10 +160,11 @@ export default function Pencarian() {
     setSelectedFile(null)
   }
 
-  const uploadFileKeServer = async () => {
+  const uploadFileKeServer = async (no_berkas_aktif) => {
     if (!selectedFile) return null
     const formData = new FormData()
     formData.append('file', selectedFile)
+    if (no_berkas_aktif) formData.append('no_berkas', no_berkas_aktif)
     try {
       const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, { 
@@ -198,7 +199,7 @@ export default function Pencarian() {
     setIsUploading(true)
     let namaFileFinal = editDocData.file_scan || ''
     if (selectedFile) {
-      const uploadedName = await uploadFileKeServer()
+      const uploadedName = await uploadFileKeServer(selectedMap.no_berkas)
       if (uploadedName) namaFileFinal = uploadedName
     }
     const newList = [...selectedMap.dokumenList]
@@ -215,7 +216,7 @@ export default function Pencarian() {
     setIsUploading(true)
     let namaFileFinal = ''
     if (selectedFile) {
-      const uploadedName = await uploadFileKeServer()
+      const uploadedName = await uploadFileKeServer(selectedMap.no_berkas)
       if (uploadedName) namaFileFinal = uploadedName
     }
     const dataSiapKirim = { ...newDoc, file_scan: namaFileFinal, status: newDoc.status || 'Di Gudang' }

@@ -15,8 +15,9 @@ from utils.decorators import superuser_required
 import magic
 
 berkas_bp = Blueprint('berkas_bp', __name__)
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_ROOT = os.path.join(BASE_DIR, '..', 'uploads')
+os.makedirs(UPLOAD_ROOT, exist_ok=True)
 
 @berkas_bp.route('/api/berkas', methods=['GET'])
 @jwt_required()
@@ -259,15 +260,24 @@ def upload_file():
     filename = secure_filename(file.filename)
     unique_filename = f"{int(time.time())}_{filename}"
     
-    filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+    no_berkas = request.form.get('no_berkas', '').strip()
+    safe_folder = secure_filename(no_berkas) if no_berkas else 'umum'
+    if not safe_folder:
+        safe_folder = 'umum'
+        
+    folder_path = os.path.join(UPLOAD_ROOT, safe_folder)
+    os.makedirs(folder_path, exist_ok=True)
+    
+    filepath = os.path.join(folder_path, unique_filename)
     file.save(filepath)
 
-    return jsonify({'status': 'success', 'filename': unique_filename})
+    relative_path = f"{safe_folder}/{unique_filename}"
+    return jsonify({'status': 'success', 'filename': relative_path})
 
-@berkas_bp.route('/api/files/<filename>', methods=['GET'])
+@berkas_bp.route('/api/files/<path:filepath>', methods=['GET'])
 @jwt_required()
-def get_file(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
+def get_file(filepath):
+    return send_from_directory(UPLOAD_ROOT, filepath)
 
 @berkas_bp.route('/api/export/csv', methods=['GET'])
 @jwt_required()
@@ -310,7 +320,9 @@ def export_csv():
                         doc.get('tanggal_pinjam', '-'),
                         doc.get('file_scan', '-')
                     ])
-            except:
+            except Exception as e:
+                import logging
+                logging.getLogger('gudang').error(f"JSON Corrupt saat export CSV Berkas {no_berkas}: {str(e)}")
                 cw.writerow([no_berkas, nama, npwp, npwp_16, nitku, 'Gagal Membaca Data Dokumen', '-', '-', '-', '-', '-', '-'])
         else:
             cw.writerow([no_berkas, nama, npwp, npwp_16, nitku, '(Wadah Kosong / Belum Ada Dokumen)', '-', '-', '-', '-', '-', '-'])
@@ -381,8 +393,9 @@ def cari_dokumen():
                     'keperluan': doc.get('keperluan', ''),
                     'file_scan': doc.get('file_scan', ''),
                 })
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger('gudang').error(f"JSON Corrupt saat cari dokumen pada Berkas {row.no_berkas}: {str(e)}")
 
     total = len(hasil)
     paginated = hasil[offset: offset + limit]
@@ -394,81 +407,6 @@ def cari_dokumen():
         'current_page': page
     })
 
-@berkas_bp.route('/api/statistik', methods=['GET'])
-@jwt_required()
-def get_statistik():
-    """
-    Sprint 5 — Endpoint statistik untuk chart Dashboard.
-    Semua data diambil dari ActivityLog dan JSON blob isi_berkas.
-    """
-    from collections import defaultdict
-    from datetime import date, timedelta
-    from models import ActivityLog
-
-    # ── 1. TREN PEMINJAMAN 6 BULAN TERAKHIR ──────────────────────────
-    # Ambil dari ActivityLog action_type='Pinjam'
-    enam_bulan_lalu = date.today() - timedelta(days=180)
-
-    logs = ActivityLog.query \
-        .filter(ActivityLog.action_type == 'Pinjam') \
-        .filter(ActivityLog.created_at >= enam_bulan_lalu) \
-        .order_by(ActivityLog.created_at.asc()) \
-        .all()
-
-    tren_dict = defaultdict(int)
-    for log in logs:
-        if log.created_at:
-            bulan = log.created_at.strftime('%Y-%m')
-            tren_dict[bulan] += 1
-
-    # Pastikan semua 6 bulan tampil meski nilai 0
-    tren_result = []
-    for i in range(5, -1, -1):
-        target = date.today().replace(day=1) - timedelta(days=i * 30)
-        key = target.strftime('%Y-%m')
-        label = target.strftime('%b %Y')
-        tren_result.append({'bulan': key, 'label': label, 'total': tren_dict.get(key, 0)})
-
-    # ── 2. DISTRIBUSI JENIS DOKUMEN ────────────────────────────────────
-    # Ambil dari JSON blob isi_berkas
-    berkas_items = DataBerkas.query \
-        .filter(DataBerkas.isi_berkas.isnot(None)) \
-        .filter(DataBerkas.isi_berkas != 'Belum diupdate') \
-        .filter(DataBerkas.isi_berkas != '[]') \
-        .filter(DataBerkas.no_berkas.notlike('EKS-%')) \
-        .all()
-
-    jenis_dict = defaultdict(int)
-    top_wp_dict = defaultdict(lambda: {'nama': '', 'total': 0})
-
-    for row in berkas_items:
-        try:
-            dokumen_list = json.loads(row.isi_berkas)
-            for doc in dokumen_list:
-                # Distribusi jenis
-                jenis = doc.get('jenis', '').strip()
-                if jenis and jenis != '-':
-                    jenis_dict[jenis] += 1
-                # Top WP (hitung per no_berkas yang punya status Dipinjam)
-                if doc.get('status') == 'Dipinjam':
-                    key = row.no_berkas
-                    top_wp_dict[key]['nama'] = row.nama
-                    top_wp_dict[key]['total'] += 1
-        except Exception:
-            pass
-
-    # Sort distribusi jenis — ambil top 8
-    jenis_sorted = sorted(jenis_dict.items(), key=lambda x: x[1], reverse=True)[:8]
-    distribusi_jenis = [{'jenis': k, 'total': v} for k, v in jenis_sorted]
-
-    # Sort top WP — ambil top 5
-    top_wp_sorted = sorted(top_wp_dict.values(), key=lambda x: x['total'], reverse=True)[:5]
-
-    return jsonify({
-        'tren_peminjaman': tren_result,
-        'distribusi_jenis': distribusi_jenis,
-        'top_wp': top_wp_sorted
-    })
 
 @berkas_bp.route('/api/berkas/<no_berkas>', methods=['DELETE'])
 @superuser_required
@@ -480,6 +418,17 @@ def delete_berkas(no_berkas):
         
     for b in berkas:
         db.session.delete(b)
+        
+    # Hapus subdirektori fisik jika ada
+    import shutil
+    safe_folder = secure_filename(no_berkas) if no_berkas else 'umum'
+    folder_path = os.path.join(UPLOAD_ROOT, safe_folder)
+    if os.path.exists(folder_path):
+        try:
+            shutil.rmtree(folder_path)
+        except Exception as e:
+            import logging
+            logging.getLogger('gudang').error(f"Gagal menghapus folder {folder_path}: {str(e)}")
         
     new_log = ActivityLog(action_type='Delete', description=f'Menghapus seluruh berkas wadah No: {no_berkas}', username=identity)
     db.session.add(new_log)

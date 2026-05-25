@@ -26,14 +26,15 @@ logger = logging.getLogger('gudang')
 
 # --- ROBOT AUTO BACKUP (JALAN DI LATAR BELAKANG) ---
 def auto_backup_worker():
-    backup_folder = os.path.join(os.getcwd(), 'backups')
+    _BASE = os.path.dirname(os.path.abspath(__file__))
+    backup_folder = os.path.join(_BASE, 'backups')
     os.makedirs(backup_folder, exist_ok=True)
     
     while True:
         now = datetime.datetime.now()
         # Eksekusi backup setiap jam 02:00 Pagi
         if now.hour == 2 and now.minute == 0:
-            db_path = os.path.join(os.getcwd(), 'instance', 'gudang.db')
+            db_path = os.path.join(_BASE, 'instance', 'gudang.db')
             backup_name = os.path.join(backup_folder, f"gudang_backup_{now.strftime('%Y%m%d')}.db")
             
             if os.path.exists(db_path) and not os.path.exists(backup_name):
@@ -47,7 +48,9 @@ def auto_backup_worker():
 app = Flask(__name__)
 
 # Konfigurasi
-load_dotenv()
+_BASE = os.path.dirname(os.path.abspath(__file__))
+env_path = os.path.join(_BASE, '.env')
+load_dotenv(dotenv_path=env_path)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///gudang.db')
 app.config['TESTING'] = os.environ.get('TESTING', 'False') == 'True'
 
@@ -75,6 +78,11 @@ CORS(app, origins=allowed_origins, supports_credentials=True)
 db.init_app(app)
 jwt.init_app(app)
 limiter.init_app(app)
+
+# Batasan limit global (60 req / min) untuk perlindungan DoS / Scraping
+limiter.limit("60 per minute")(berkas_bp)
+limiter.limit("60 per minute")(sirkulasi_bp)
+limiter.limit("60 per minute")(dashboard_bp)
 
 # Daftar Blueprint
 app.register_blueprint(auth_bp)

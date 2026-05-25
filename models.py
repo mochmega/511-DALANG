@@ -13,7 +13,7 @@ class User(db.Model):
 class Dokumen(db.Model):
     __tablename__ = "dokumen"
     id           = db.Column(db.Integer, primary_key=True)
-    no_berkas    = db.Column(db.String(50), nullable=False)  # FK ke data_berkas
+    no_berkas    = db.Column(db.String(50), db.ForeignKey('data_berkas.no_berkas'), nullable=False)
     nama         = db.Column(db.String(200), nullable=False)
     nomor        = db.Column(db.String(100), default="-")
     jenis        = db.Column(db.String(100), default="-")
@@ -43,6 +43,9 @@ class DataBerkas(db.Model):
     isi_berkas = db.Column(db.Text)
     lokasi = db.Column(db.String(100))
     status_pinjam = db.Column(db.String(50), default='Di Gudang')
+    
+    # Relasi ke Dokumen
+    dokumen = db.relationship('Dokumen', backref='data_berkas_ref', lazy=True, cascade="all, delete-orphan")
 
 class ActivityLog(db.Model):
     __tablename__ = "activity_log"
