@@ -21,7 +21,10 @@ export default function Sirkulasi() {
   const { auth } = useAuth()
   
   // State Operasional Sirkulasi
-  const [peminjam, setPeminjam] = useState(auth?.username || '')
+  const [peminjam, setPeminjam] = useState('')
+  useEffect(() => {
+    if (auth?.username) setPeminjam(auth.username)
+  }, [auth])
   const [tanggalPinjam, setTanggalPinjam] = useState(new Date().toISOString().split('T')[0])
   const [keperluan, setKeperluan] = useState('')
   const role = auth?.role || 'user'

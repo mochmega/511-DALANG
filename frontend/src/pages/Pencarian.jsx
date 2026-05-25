@@ -177,11 +177,10 @@ export default function Pencarian() {
     } catch (error) { return false }
   }
 
-  const hapusDokumenPermanen = async (index) => {
+  const hapusDokumenPermanen = async (realIndex) => {
     const isConfirmed = await showConfirm("Yakin ingin menghapus dokumen ini dari berkas?")
     if(!isConfirmed) return;
-    const docToHapus = filteredDocs[index]
-    const realIndex = selectedMap.dokumenList.findIndex(d => d === docToHapus)
+    const docToHapus = selectedMap.dokumenList[realIndex]
     const newList = selectedMap.dokumenList.filter((_, i) => i !== realIndex)
     
     const logDesc = `Dokumen ${docToHapus.nama} dihapus dari rumah berkas ${selectedMap.no_berkas}`
@@ -387,7 +386,7 @@ export default function Pencarian() {
                             <td className="py-3 px-4 text-center">
                               <div className="inline-flex rounded-lg border border-slate-700 bg-slate-800 overflow-hidden">
                                 <button className="px-3 py-1.5 hover:bg-slate-700 text-theme-400 transition-colors border-r border-slate-700" onClick={() => bukaModalEditSatu(doc, realIndex)} title="Edit">✏️</button>
-                                <button className="px-3 py-1.5 hover:bg-rose-900/50 text-rose-400 transition-colors" onClick={() => hapusDokumenPermanen(index)} title="Hapus">❌</button>
+                                <button className="px-3 py-1.5 hover:bg-rose-900/50 text-rose-400 transition-colors" onClick={() => hapusDokumenPermanen(realIndex)} title="Hapus">❌</button>
                               </div>
                             </td>
                           )}

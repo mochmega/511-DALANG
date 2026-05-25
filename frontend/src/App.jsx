@@ -35,6 +35,12 @@ const PrivateRoute = ({ children }) => {
   return auth ? children : <Navigate to="/login" replace />
 }
 
+const RoleRoute = ({ children, allowedRoles }) => {
+  const { auth } = useAuth()
+  if (!allowedRoles.includes(auth?.role)) return <Navigate to="/" replace />
+  return children
+}
+
 const NavItem = ({ to, icon, label, isOpen }) => {
   const location = useLocation()
   const isActive = location.pathname === to
@@ -175,8 +181,8 @@ function AppLayout() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/pencarian" element={<Pencarian />} />
             <Route path="/sirkulasi" element={<Sirkulasi />} />
-            <Route path="/mutasi" element={<Mutasi />} />
-            <Route path="/registrasi" element={<Registrasi />} />
+            <Route path="/mutasi" element={<RoleRoute allowedRoles={['superuser','petugas']}><Mutasi /></RoleRoute>} />
+            <Route path="/registrasi" element={<RoleRoute allowedRoles={['superuser','petugas']}><Registrasi /></RoleRoute>} />
 			<Route path="/log" element={<LogAktivitas />} />
 			<Route path="/pengaturan" element={<Pengaturan />} />
           </Routes>
