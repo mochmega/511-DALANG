@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({ total_rumah: "...", dipinjam: "...", activities: [] })
+  const [stats, setStats] = useState({ total_rumah: "...", dipinjam: "...", terlambat: 0, activities: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const { auth } = useAuth()
@@ -47,7 +47,7 @@ export default function Dashboard() {
       )}
 
       {/* GRID ATAS: KARTU STATISTIK */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         
         {/* KARTU 1: TOTAL RUMAH BERKAS (TEMA HIJAU) */}
         <div className="relative bg-slate-900 rounded-2xl p-6 border border-emerald-500/30 shadow-lg shadow-emerald-500/10 overflow-hidden">
@@ -86,6 +86,24 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* KARTU 3: TERLAMBAT KEMBALI (TEMA AMBER/KUNING) */}
+        <div className="relative bg-slate-900 rounded-2xl p-6 border border-amber-500/30 shadow-lg shadow-amber-500/10 overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
+          <div className="flex items-center gap-3 mb-4 relative z-10">
+            <span className="text-2xl">⚠️</span>
+            <h3 className="text-lg font-semibold text-slate-300">Terlambat Kembali</h3>
+          </div>
+          <div className="text-6xl font-black text-amber-400 tracking-tight text-center py-4 relative z-10">
+            {loading ? "..." : (stats.terlambat ?? 0)}
+          </div>
+          {stats.terlambat > 0 && (
+            <div className="mt-4 px-4 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-semibold text-center animate-pulse">
+              ⚠ Perlu Tindakan Segera
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* PANEL BAWAH: AKTIVITAS TERKINI */}
