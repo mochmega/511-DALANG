@@ -34,7 +34,7 @@ class Dokumen(db.Model):
 class DataBerkas(db.Model):
     __tablename__ = "data_berkas"
     id = db.Column(db.Integer, primary_key=True)
-    no_berkas = db.Column(db.String(50), nullable=False, unique=True, index=True)
+    no_berkas = db.Column(db.String(50), nullable=False, index=True)
     npwp_9 = db.Column(db.String(50))
     npwp = db.Column(db.String(50))
     npwp_16 = db.Column(db.String(50))
