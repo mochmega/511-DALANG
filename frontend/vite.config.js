@@ -9,7 +9,7 @@ export default defineConfig({
     react()
   ],
   server: {
-    port: 5174,
+    port: 5173,
     strictPort: true  // Gagal dengan pesan jelas jika port sudah dipakai (tidak diam-diam naik ke port lain)
   }
 })

@@ -29,3 +29,24 @@ class Dokumen(db.Model):
     batas_kembali = db.Column(db.String(20), default="")  # Fitur baru: deadline
     created_at   = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at   = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+class DataBerkas(db.Model):
+    __tablename__ = "data_berkas"
+    id = db.Column(db.Integer, primary_key=True)
+    no_berkas = db.Column(db.String(50), nullable=False)
+    npwp_9 = db.Column(db.String(50))
+    npwp = db.Column(db.String(50))
+    npwp_16 = db.Column(db.String(50))
+    nitku = db.Column(db.String(50))
+    nama = db.Column(db.String(200), nullable=False)
+    isi_berkas = db.Column(db.Text)
+    lokasi = db.Column(db.String(100))
+    status_pinjam = db.Column(db.String(50), default='Di Gudang')
+
+class ActivityLog(db.Model):
+    __tablename__ = "activity_log"
+    id = db.Column(db.Integer, primary_key=True)
+    action_type = db.Column(db.String(50))
+    description = db.Column(db.String(255))
+    username = db.Column(db.String(80))
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
