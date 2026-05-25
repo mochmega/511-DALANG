@@ -3,7 +3,7 @@ import math
 from flask import Blueprint, jsonify, request
 from extensions import db
 from models import DataBerkas
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 sirkulasi_bp = Blueprint('sirkulasi_bp', __name__)
 
@@ -27,14 +27,28 @@ def get_dipinjam():
 
     dipinjam_list = []
     for doc, data_berkas in results:
-        # doc_index is no longer array position, but since frontend needs it to send to update-isi (which expects full array),
-        # Wait, if update-isi expects a full array, then Sirkulasi can't just fetch isolated documents! 
-        # Ah! But wait, Sirkulasi processes mutasi/pinjam/kembali locally and posts the FULL array?
-        # Let's see: Sirkulasi fetches /api/berkas via handleCari, NOT /api/sirkulasi/dipinjam!
-        # Wait, handleCari in Sirkulasi fetches `/api/berkas?search=...` !!
-        # What does /api/sirkulasi/dipinjam do? It is NEVER called in Sirkulasi! 
-        # Ah, Dashboard uses /api/sirkulasi/dipinjam? Let's check!
-        pass
+        dipinjam_list.append({
+            'no_berkas': data_berkas.no_berkas,
+            'nama_wp': data_berkas.nama,
+            'npwp_16': data_berkas.npwp_16 or '-',
+            'doc_id': doc.id,
+            'nama': doc.nama,
+            'nomor': doc.nomor,
+            'jenis': doc.jenis,
+            'tahun': doc.tahun,
+            'status': doc.status,
+            'peminjam': doc.peminjam,
+            'tanggal_pinjam': doc.tanggal_pinjam,
+            'batas_kembali': doc.batas_kembali,
+            'keperluan': doc.keperluan,
+        })
+
+    return jsonify({
+        'data': dipinjam_list,
+        'total': total,
+        'total_pages': total_pages,
+        'current_page': page
+    })
 
 @sirkulasi_bp.route('/api/mutasi', methods=['POST'])
 @jwt_required()
