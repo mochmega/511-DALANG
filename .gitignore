@@ -38,6 +38,8 @@ gudang.db
 *.sqlite3
 *.db
 *.zip
+*.xlsx
+*.xls
 instance/
 
 # Node / React Frontend
