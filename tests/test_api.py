@@ -14,7 +14,7 @@ def test_login_fail(client):
 def test_register_and_delete_user(client, superuser_token):
     hdrs = {'Authorization': f'Bearer {superuser_token}'}
     # Register
-    res = client.post('/api/register', headers=hdrs, json={'username': 'budi', 'password': '123', 'role': 'petugas'})
+    res = client.post('/api/register', headers=hdrs, json={'username': 'budi', 'password': 'testpass123', 'role': 'petugas'})
     assert res.status_code == 200
     
     # Check if exists
