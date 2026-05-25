@@ -41,6 +41,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # 3.5 Run migrations
+      - name: Run migrations
+        env:
+          JWT_SECRET_KEY: "ci-test-secret-key-12345"
+          ADMIN_USERNAME: "admin"
+          ADMIN_PASSWORD: "admin"
+        run: |
+          python -m alembic upgrade head
+
       # 4. Run test suite
       - name: Run pytest
         env:

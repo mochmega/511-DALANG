@@ -15,6 +15,8 @@ from routes.dashboard import dashboard_bp
 import threading
 import time
 import shutil
+from alembic.config import Config
+from alembic import command
 
 # Setup logging — satu kali di sini, berlaku untuk seluruh aplikasi
 logging.basicConfig(
@@ -90,10 +92,24 @@ app.register_blueprint(berkas_bp)
 app.register_blueprint(sirkulasi_bp)
 app.register_blueprint(dashboard_bp)
 
+def run_migrations(app):
+    """Jalankan alembic upgrade head otomatis saat startup."""
+    with app.app_context():
+        try:
+            _BASE = os.path.dirname(os.path.abspath(__file__))
+            alembic_cfg = Config(os.path.join(_BASE, 'alembic.ini'))
+            alembic_cfg.set_main_option('sqlalchemy.url', app.config['SQLALCHEMY_DATABASE_URI'])
+            command.upgrade(alembic_cfg, 'head')
+            logger.info('✅ Database migration: up to date')
+        except Exception as e:
+            logger.error(f'❌ Migration gagal: {e}')
+            raise
+
 # --- FUNGSI INISIALISASI DB ---
 def init_db():
+    run_migrations(app)
     with app.app_context():
-        db.create_all()
+        # db.create_all() # Diganti dengan run_migrations
         # Fix #2: Admin credentials from .env — not hardcoded in source code
         admin_user = os.environ.get("ADMIN_USERNAME", "admin")
         admin_pass = os.environ.get("ADMIN_PASSWORD")

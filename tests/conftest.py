@@ -24,7 +24,17 @@ def app():
     # Cleanup sesudah test
     with flask_app.app_context():
         db.session.remove()
-        db.drop_all()
+        db.engine.dispose()
+    
+    # Delete the test database file to ensure a clean slate for the next test run,
+    # including removing the alembic_version table.
+    import os
+    db_path = os.path.join(flask_app.instance_path, 'test_gudang.db')
+    if os.path.exists(db_path):
+        try:
+            os.remove(db_path)
+        except Exception:
+            pass
 
     try:
         os.remove('instance/test_gudang.db')
