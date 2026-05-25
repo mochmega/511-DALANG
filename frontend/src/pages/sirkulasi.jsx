@@ -49,7 +49,7 @@ export default function Sirkulasi() {
   const handleCari = async (currentPage = page, currentLimit = limit) => {
     try {
       const token = auth?.token
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${query}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${encodeURIComponent(query)}&by=${encodeURIComponent(searchBy)}&page=${currentPage}&limit=${currentLimit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const rawResponse = await res.json()

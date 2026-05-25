@@ -42,6 +42,10 @@ export default function Registrasi() {
 
   const handleSubmitSatuan = async (e) => {
     e.preventDefault()
+    if (!formData.no_berkas.trim() || !formData.nama.trim()) {
+      showAlert("Nomor berkas dan nama wajib diisi", "error")
+      return
+    }
     setIsLoadingSatuan(true)
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/registrasi`, {
@@ -95,6 +99,7 @@ export default function Registrasi() {
       // Endpoint ini harus dibuat di Flask backend nanti
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/registrasi/massal`, {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formDataUpload
       })
       const data = await res.json()

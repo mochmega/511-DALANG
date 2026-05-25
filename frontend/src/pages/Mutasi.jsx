@@ -37,7 +37,7 @@ export default function Mutasi() {
 
   const fetchData = async (searchQuery, isRiwayat = false, currentPage = page, currentLimit = limit) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${searchQuery}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${encodeURIComponent(searchQuery)}&by=${encodeURIComponent(searchBy)}&page=${currentPage}&limit=${currentLimit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const rawResponse = await res.json()

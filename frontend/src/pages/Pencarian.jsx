@@ -34,6 +34,7 @@ export default function Pencarian() {
 
   const [expandedCabang, setExpandedCabang] = useState({})
   
+  const { showAlert, showConfirm } = useAlert()
   const { auth } = useAuth()
   const role = auth?.role || 'user'
 
@@ -45,7 +46,7 @@ export default function Pencarian() {
   const handleCari = async (currentPage = page, currentLimit = limit) => {
     try {
       const token = auth?.token
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${query}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${encodeURIComponent(query)}&by=${encodeURIComponent(searchBy)}&page=${currentPage}&limit=${currentLimit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const rawResponse = await res.json()
@@ -456,7 +457,15 @@ export default function Pencarian() {
               
               <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-4 border-dashed">
                 <InputLabel>📎 Upload File Scan (PDF/JPG) - Opsional</InputLabel>
-                <input type="file" className="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 cursor-pointer w-full mt-2" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setSelectedFile(e.target.files[0])} />
+                <input type="file" className="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 cursor-pointer w-full mt-2" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => {
+                  const file = e.target.files[0]
+                  if (file && file.size > 20 * 1024 * 1024) {
+                    showAlert("File maksimal 20MB", "error")
+                    e.target.value = ""
+                    return
+                  }
+                  setSelectedFile(file)
+                }} />
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
@@ -522,7 +531,15 @@ export default function Pencarian() {
               <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-4 border-dashed">
                 <InputLabel>📎 Timpa/Ganti File Scan (Opsional)</InputLabel>
                 {editDocData.file_scan && <div className="text-xs text-emerald-400 mb-2 font-semibold">File saat ini: {editDocData.file_scan}</div>}
-                <input type="file" className="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-theme-500/10 file:text-theme-400 hover:file:bg-theme-500/20 cursor-pointer w-full" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setSelectedFile(e.target.files[0])} />
+                <input type="file" className="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-theme-500/10 file:text-theme-400 hover:file:bg-theme-500/20 cursor-pointer w-full" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => {
+                  const file = e.target.files[0]
+                  if (file && file.size > 20 * 1024 * 1024) {
+                    showAlert("File maksimal 20MB", "error")
+                    e.target.value = ""
+                    return
+                  }
+                  setSelectedFile(file)
+                }} />
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
