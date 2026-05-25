@@ -8,7 +8,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const { showAlert } = useAlert()
-  const { login } = useAuth()
+  const { login, updatePreferences, auth } = useAuth()
   const [isLightMode, setIsLightMode] = useState(() => 
     document.documentElement.getAttribute('data-mode') === 'light'
   )
@@ -16,9 +16,9 @@ export default function Login() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Tema akan di-handle oleh AuthContext (guestTheme/guestMode)
-    // Jika belum diset, defaultnya di-handle di sana
-  }, [])
+    // Sinkronkan state lokal dengan mode yang diterapkan AuthContext
+    setIsLightMode(document.documentElement.getAttribute('data-mode') === 'light')
+  }, [auth?.mode])
 
   const handleLogin = async (e) => {
     e.preventDefault()
