@@ -28,7 +28,7 @@ export default function Pengaturan() {
     }
     setIsChangingPass(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/ganti-password`, {
         method: "POST",
         headers: {
@@ -60,7 +60,7 @@ export default function Pengaturan() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token')
+      const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -79,7 +79,7 @@ export default function Pengaturan() {
     document.documentElement.setAttribute('data-theme', color)
     
     // Save to backend
-    const token = localStorage.getItem('token')
+    const token = auth?.token
     if (token) {
       try {
         await fetch(`${import.meta.env.VITE_API_URL}/api/user/theme`, {
@@ -99,7 +99,7 @@ export default function Pengaturan() {
   const handleAddUser = async (e) => {
     e.preventDefault()
     try {
-      const token = localStorage.getItem('token')
+      const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/register`, {
         method: 'POST',
         headers: { 
@@ -155,7 +155,7 @@ export default function Pengaturan() {
     if (!isConfirmed) return
 
     try {
-      const token = localStorage.getItem('token')
+      const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${username}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -257,7 +257,7 @@ export default function Pengaturan() {
                 <button 
                   onClick={async () => {
                     try {
-                      const token = localStorage.getItem('token');
+                      const token = auth?.token;
                       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/export-db`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                       });

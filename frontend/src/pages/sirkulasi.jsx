@@ -21,7 +21,7 @@ export default function Sirkulasi() {
   const { auth } = useAuth()
   
   // State Operasional Sirkulasi
-  const [peminjam, setPeminjam] = useState(auth?.username || localStorage.getItem('username') || '')
+  const [peminjam, setPeminjam] = useState(auth?.username || '')
   const [tanggalPinjam, setTanggalPinjam] = useState(new Date().toISOString().split('T')[0])
   const [keperluan, setKeperluan] = useState('')
   const role = auth?.role || 'user'
@@ -45,7 +45,7 @@ export default function Sirkulasi() {
   // FUNGSI PENCARIAN
   const handleCari = async (currentPage = page, currentLimit = limit) => {
     try {
-      const token = localStorage.getItem('token')
+      const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${query}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -92,8 +92,8 @@ export default function Sirkulasi() {
 
   const simpanKeDB = async (noBerkas, newList, log_action = null, log_desc = null) => {
     try {
-      const username = localStorage.getItem('username') || 'Sistem'
-      const token = localStorage.getItem('token')
+      const username = auth?.username || 'Sistem'
+      const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas/update-isi`, {
         method: 'POST',
         headers: { 

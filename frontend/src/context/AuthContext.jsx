@@ -35,10 +35,18 @@ export function AuthProvider({ children }) {
         clearAuth()
       }
     } catch (error) {
-      // Jika server tidak dapat diakses (network error), jangan izinkan masuk.
-      // Hal ini mencegah eksploitasi token yang sudah di-revoke.
-      console.error("Gagal terhubung ke server untuk validasi token:", error);
-      clearAuth()
+      // Jangan clearAuth saat network error — token mungkin masih valid
+      // Biarkan user masuk, biarkan request berikutnya yang memvalidasi
+      console.error("Server tidak dapat diakses:", error)
+      if (token) {
+        setAuthState({
+          token,
+          role: localStorage.getItem('role') || 'user',
+          username: localStorage.getItem('username') || ''
+        })
+      } else {
+        setAuthState(false)
+      }
     }
   }, [])
 

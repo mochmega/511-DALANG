@@ -20,7 +20,7 @@ export default function Mutasi() {
   
   const { showAlert } = useAlert()
   const { auth } = useAuth()
-  const token = auth?.token || localStorage.getItem('token')
+  const token = auth?.token
   
   // Keranjang Belanja untuk Mutasi Massal
   const [selectedBerkas, setSelectedBerkas] = useState([])

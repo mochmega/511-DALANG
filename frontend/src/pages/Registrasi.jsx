@@ -16,7 +16,7 @@ export default function Registrasi() {
   
   const { showAlert } = useAlert()
   const { auth } = useAuth()
-  const token = auth?.token || localStorage.getItem('token')
+  const token = auth?.token
 
   const fetchSaranNomor = async () => {
     try {

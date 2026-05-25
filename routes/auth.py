@@ -27,6 +27,12 @@ def login():
     
     return jsonify(status='error', message='Username atau Password salah'), 401
 
+@auth_bp.route('/api/validate-token', methods=['GET'])
+@jwt_required()
+def validate_token():
+    identity = get_jwt_identity()
+    return jsonify(status='ok', username=identity)
+
 @auth_bp.route('/api/user/theme', methods=['POST'])
 @jwt_required()
 def update_theme():

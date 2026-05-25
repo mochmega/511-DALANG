@@ -26,7 +26,7 @@ export default function LogAktivitas() {
   const fetchLogs = async (currentPage = page) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = auth?.token;
       const params = new URLSearchParams({
         page: currentPage,
         limit: 50,

@@ -44,7 +44,7 @@ export default function Pencarian() {
 
   const handleCari = async (currentPage = page, currentLimit = limit) => {
     try {
-      const token = localStorage.getItem('token')
+      const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${query}&by=${searchBy}&page=${currentPage}&limit=${currentLimit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -148,7 +148,7 @@ export default function Pencarian() {
     const formData = new FormData()
     formData.append('file', selectedFile)
     try {
-      const token = localStorage.getItem('token')
+      const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, { 
         method: 'POST', 
         headers: { 'Authorization': `Bearer ${token}` },
@@ -162,8 +162,8 @@ export default function Pencarian() {
 
   const simpanKeDB = async (noBerkas, newList, log_action = null, log_desc = null) => {
     try {
-      const username = localStorage.getItem('username') || 'Sistem'
-      const token = localStorage.getItem('token')
+      const username = auth?.username || 'Sistem'
+      const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas/update-isi`, {
         method: 'POST', 
         headers: { 
