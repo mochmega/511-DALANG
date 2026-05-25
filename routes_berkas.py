@@ -17,6 +17,9 @@ from extensions import db, jwt
 from models import User
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import check_password_hash, generate_password_hash
+import logging
+
+logger = logging.getLogger('gudang.routes')
 # Konfigurasi Folder Upload (Otomatis bikin folder 'uploads' kalau belum ada)
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -35,7 +38,7 @@ def auto_backup_worker():
             
             if os.path.exists(db_path) and not os.path.exists(backup_name):
                 shutil.copy(db_path, backup_name)
-                print(f"AUTO-BACKUP BERHASIL: {backup_name}")
+                logger.info(f"AUTO-BACKUP BERHASIL: {backup_name}")
                 
         time.sleep(60) # Cek jam setiap 1 menit
 
@@ -442,10 +445,17 @@ def update_isi_berkas():
 @berkas_bp.route('/api/sirkulasi/dipinjam', methods=['GET'])
 @jwt_required()
 def get_dipinjam():
+    page  = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 50, type=int)
+
     conn = get_db_connection()
-    rows = conn.execute("SELECT no_berkas, nama, isi_berkas FROM data_berkas WHERE isi_berkas != 'Belum diupdate' AND isi_berkas IS NOT NULL").fetchall()
+    rows = conn.execute(
+        "SELECT no_berkas, nama, isi_berkas FROM data_berkas "
+        "WHERE isi_berkas != 'Belum diupdate' AND isi_berkas IS NOT NULL"
+    ).fetchall()
     conn.close()
-    
+
+    # Kumpulkan semua dokumen dipinjam dulu (filter di Python karena data ada di JSON)
     dipinjam_list = []
     for row in rows:
         try:
@@ -455,12 +465,23 @@ def get_dipinjam():
                     dipinjam_list.append({
                         'no_berkas': row['no_berkas'],
                         'nama_wp_induk': row['nama'],
-                        'doc_index': index,     
+                        'doc_index': index,
                         'dokumen': doc
                     })
-        except:
+        except Exception:
             pass
-    return jsonify(dipinjam_list)
+
+    total = len(dipinjam_list)
+    total_pages = math.ceil(total / limit) if limit > 0 else 1
+    offset = (page - 1) * limit
+    paginated = dipinjam_list[offset: offset + limit]
+
+    return jsonify({
+        'data': paginated,
+        'total': total,
+        'total_pages': total_pages,
+        'current_page': page
+    })
     
 # ==========================================
 # Rute API Eksekusi Mutasi Keluar

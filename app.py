@@ -1,11 +1,20 @@
 # File: app.py
 import os
+import logging
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 from extensions import db, jwt
 from models import User, generate_password_hash
 from routes_berkas import berkas_bp, auth_bp
+
+# Setup logging — satu kali di sini, berlaku untuk seluruh aplikasi
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger('gudang')
 
 app = Flask(__name__)
 
@@ -50,11 +59,11 @@ def init_db():
             )
             db.session.add(admin)
             db.session.commit()
-            print(f"--- Superuser '{admin_user}' berhasil dibuat! ---")
+            logger.info(f"Superuser '{admin_user}' berhasil dibuat.")
         elif not admin_pass:
-            print("[WARNING] ADMIN_PASSWORD tidak diset di .env — superuser tidak dibuat otomatis.")
+            logger.warning("ADMIN_PASSWORD tidak diset di .env — superuser tidak dibuat otomatis.")
 
 if __name__ == '__main__':
-    init_db() # Jalankan fungsi buat DB & Admin
-    print("Backend API Flask menyala di port 5000!")
+    init_db()
+    logger.info("Backend API Flask menyala di port 5000")
     app.run(debug=False, host='0.0.0.0', port=5000)
