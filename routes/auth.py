@@ -137,6 +137,8 @@ def ganti_password():
         return jsonify({"status": "error", "message": "Password baru minimal 6 karakter"}), 400
 
     user = User.query.filter_by(username=identity).first()
+    if not user:
+        return jsonify({"status": "error", "message": "User tidak ditemukan"}), 404
     if not check_password_hash(user.password_hash, password_lama):
         return jsonify({"status": "error", "message": "Password lama salah"}), 401
 

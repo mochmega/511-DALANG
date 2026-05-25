@@ -6,6 +6,11 @@ export default function Pengaturan() {
   const { auth, updatePreferences } = useAuth()
   const [activeTab, setActiveTab] = useState('profil')
   const [selectedColor, setSelectedColor] = useState(auth?.theme || 'sky')
+  
+  useEffect(() => {
+    if (auth?.theme) setSelectedColor(auth.theme)
+  }, [auth?.theme])
+
   const role = auth?.role || 'user'
   const { showAlert, showConfirm } = useAlert()
 
@@ -75,7 +80,7 @@ export default function Pengaturan() {
 
   const handleThemeChange = async (color) => {
     setSelectedColor(color)
-    updatePreferences(color, null)
+    updatePreferences(color, auth?.mode || 'dark')
   }
 
   const handleAddUser = async (e) => {

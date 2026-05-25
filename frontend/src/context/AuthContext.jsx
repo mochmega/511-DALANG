@@ -47,6 +47,21 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Server tidak dapat diakses:", error)
       if (token) {
+        // Fallback offline: validasi username di localStorage dengan payload JWT (BUG #3 fix)
+        try {
+          const payloadBase64 = token.split('.')[1]
+          const payload = JSON.parse(atob(payloadBase64))
+          const storedUsername = localStorage.getItem('username')
+          
+          if (payload.sub !== storedUsername) {
+            clearAuth()
+            return
+          }
+        } catch (e) {
+          clearAuth()
+          return
+        }
+
         const cachedTheme = localStorage.getItem('cachedTheme') || 'sky'
         const cachedMode = localStorage.getItem('cachedMode') || 'dark'
         applyDOM(cachedTheme, cachedMode)
