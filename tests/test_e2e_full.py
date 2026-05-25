@@ -72,9 +72,9 @@ def run_tests():
         record("Auth", "Dashboard with fake token returns 422", res.status_code == 422)
         
         # 1.6 Verify JWT identity is correct
-        res = client.get('/api/me', headers=auth_header(su_token))
+        res = client.get('/api/validate-token', headers=auth_header(su_token))
         data = res.get_json() if res.status_code == 200 else {}
-        record("Auth", "GET /api/me returns user info", 
+        record("Auth", "GET /api/validate-token returns user info", 
                res.status_code == 200 and data.get('username') == 'admin')
         
         # ============================================================
