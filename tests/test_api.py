@@ -90,3 +90,22 @@ def test_dashboard_stats(client, superuser_token):
     assert 'total_rumah' in data
     assert 'dipinjam' in data
     assert 'activities' in data
+
+def test_user_cannot_access_admin_endpoints(client, user_token):
+    hdrs = {'Authorization': f'Bearer {user_token}'}
+    
+    # 1. Coba daftar user baru (khusus superuser)
+    res = client.post('/api/register', headers=hdrs, json={
+        'username': 'hacker',
+        'password': 'password123',
+        'role': 'petugas'
+    })
+    assert res.status_code == 403
+    
+    # 2. Coba lihat daftar user (khusus superuser)
+    res = client.get('/api/users', headers=hdrs)
+    assert res.status_code == 403
+    
+    # 3. Coba unduh backup database (khusus superuser)
+    res = client.get('/api/export-db', headers=hdrs)
+    assert res.status_code == 403
