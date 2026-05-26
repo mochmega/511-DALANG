@@ -7,7 +7,7 @@ import pytest
 os.environ['TESTING'] = 'True'
 os.environ['SQLITE_DB'] = 'test_database.db'
 os.environ['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test_gudang.db'
-os.environ['JWT_SECRET_KEY'] = 'test-secret'
+os.environ['JWT_SECRET_KEY'] = 'test-secret-key-32-chars-long-security-key'
 os.environ['ADMIN_USERNAME'] = 'admin'
 os.environ['ADMIN_PASSWORD'] = 'admin'
 
