@@ -47,10 +47,11 @@ class SuperuserBehavior(HttpUser):
 
     def on_start(self):
         """Login sekali di awal, simpan token."""
+        random_ip = f"{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}"
         res = self.client.post("/api/login", json={
-            "username": ADMIN_USER,
-            "password": ADMIN_PASS
-        })
+            "username": "admin123",
+            "password": "admin123"
+        }, headers={"X-Forwarded-For": random_ip})
         if res.status_code == 200:
             self.token = res.json().get("token")
         else:
@@ -131,12 +132,13 @@ class PetugasBehavior(HttpUser):
     username = None
 
     def on_start(self):
-        """Login dengan akun petugas (gunakan akun admin untuk test)."""
-        self.username = ADMIN_USER
+        """Login dengan salah satu dari 8 akun petugas secara acak."""
+        random_ip = f"{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}"
+        self.username = f"petugas{random.randint(1, 8)}"
         res = self.client.post("/api/login", json={
             "username": self.username,
-            "password": ADMIN_PASS
-        })
+            "password": "petugas123"
+        }, headers={"X-Forwarded-For": random_ip})
         if res.status_code == 200:
             self.token = res.json().get("token")
 
@@ -289,10 +291,13 @@ class UserBiasaBehavior(HttpUser):
     token = None
 
     def on_start(self):
+        """Login dengan salah satu dari 50 akun user secara acak."""
+        random_ip = f"{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}"
+        self.username = f"user{random.randint(1, 50)}"
         res = self.client.post("/api/login", json={
-            "username": ADMIN_USER,
-            "password": ADMIN_PASS
-        })
+            "username": self.username,
+            "password": "user123"
+        }, headers={"X-Forwarded-For": random_ip})
         if res.status_code == 200:
             self.token = res.json().get("token")
 
