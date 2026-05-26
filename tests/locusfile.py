@@ -57,9 +57,12 @@ class SuperuserBehavior(HttpUser):
             self.token = None
 
     def auth_headers(self):
+        # Simulasikan IP klien acak untuk pengujian multi-IP / bypass rate limiter lokal
+        random_ip = f"{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}"
         return {
             "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "X-Forwarded-For": random_ip
         }
 
     @task(3)
@@ -138,9 +141,12 @@ class PetugasBehavior(HttpUser):
             self.token = res.json().get("token")
 
     def auth_headers(self):
+        # Simulasikan IP klien acak untuk pengujian multi-IP / bypass rate limiter lokal
+        random_ip = f"{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}"
         return {
             "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "X-Forwarded-For": random_ip
         }
 
     @task(5)
@@ -291,7 +297,12 @@ class UserBiasaBehavior(HttpUser):
             self.token = res.json().get("token")
 
     def auth_headers(self):
-        return {"Authorization": f"Bearer {self.token}"}
+        # Simulasikan IP klien acak untuk pengujian multi-IP / bypass rate limiter lokal
+        random_ip = f"{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}"
+        return {
+            "Authorization": f"Bearer {self.token}",
+            "X-Forwarded-For": random_ip
+        }
 
     @task(5)
     def search_berkas(self):

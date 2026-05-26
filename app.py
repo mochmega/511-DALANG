@@ -59,6 +59,11 @@ def auto_backup_worker(app_context_app):
 
 app = Flask(__name__)
 
+# ProxyFix middleware untuk mendeteksi IP klien asli via header X-Forwarded-For (berguna saat di balik Nginx/Load Test)
+if os.environ.get("TRUST_PROXIES", "False") == "True":
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+
 # Konfigurasi
 _BASE = os.path.dirname(os.path.abspath(__file__))
 env_path = os.path.join(_BASE, '.env')
