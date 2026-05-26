@@ -18,16 +18,16 @@ class Dokumen(db.Model):
     nomor        = db.Column(db.String(100), default="-")
     jenis        = db.Column(db.String(100), default="-")
     tahun        = db.Column(db.String(10), default="-")
-    tanggal      = db.Column(db.String(20), default="")
+    tanggal      = db.Column(db.Date, nullable=True)
     pemilik      = db.Column(db.String(200), default="")  # Nama WP Pusat/Cabang
     wadah        = db.Column(db.String(50), default="")
     status       = db.Column(db.String(50), default="Di Gudang")
     peminjam     = db.Column(db.String(200), default="")
-    tanggal_pinjam = db.Column(db.String(20), default="")
-    tanggal_kembali = db.Column(db.String(20), default="")
+    tanggal_pinjam = db.Column(db.Date, nullable=True)
+    tanggal_kembali = db.Column(db.Date, nullable=True)
     keperluan    = db.Column(db.String(300), default="")
     file_scan    = db.Column(db.String(200), default="")
-    batas_kembali = db.Column(db.String(20), default="")  # Fitur baru: deadline
+    batas_kembali = db.Column(db.Date, nullable=True)  # Fitur baru: deadline
     created_at   = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at   = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
@@ -40,7 +40,6 @@ class DataBerkas(db.Model):
     npwp_16 = db.Column(db.String(50))
     nitku = db.Column(db.String(50))
     nama = db.Column(db.String(200), nullable=False)
-    isi_berkas = db.Column(db.Text)
     lokasi = db.Column(db.String(100))
     status_pinjam = db.Column(db.String(50), default='Di Gudang')
     

@@ -13,3 +13,14 @@ def superuser_required(fn):
             return jsonify(status='error', message='Akses ditolak'), 403
         return fn(*args, **kwargs)
     return wrapper
+
+def petugas_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        identity = get_jwt_identity()
+        user = User.query.filter_by(username=identity).first()
+        if not user or user.role not in ('petugas', 'superuser'):
+            return jsonify(status='error', message='Akses ditolak'), 403
+        return fn(*args, **kwargs)
+    return wrapper

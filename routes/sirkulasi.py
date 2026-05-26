@@ -1,16 +1,32 @@
-import json
 import math
 from flask import Blueprint, jsonify, request
 from extensions import db
-from models import DataBerkas
+from models import DataBerkas, Dokumen, User, ActivityLog
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from utils.decorators import superuser_required, petugas_required
 
 sirkulasi_bp = Blueprint('sirkulasi_bp', __name__)
+
+def _mutasi_satu_berkas(no_berkas, alasan):
+    rows = DataBerkas.query.filter_by(no_berkas=no_berkas).all()
+    if not rows:
+        return False
+        
+    new_no_berkas = f"EKS-{no_berkas}"
+    for row in rows:
+        row.nama = f"[MUTASI - {alasan}] {row.nama}"
+        
+        docs = Dokumen.query.filter_by(no_berkas=row.no_berkas).all()
+        for doc in docs:
+            doc.status = 'Dimutasi'
+            doc.no_berkas = new_no_berkas
+        
+        row.no_berkas = new_no_berkas
+    return True
 
 @sirkulasi_bp.route('/api/sirkulasi/dipinjam', methods=['GET'])
 @jwt_required()
 def get_dipinjam():
-    from models import Dokumen
     page  = request.args.get('page', 1, type=int)
     limit = request.args.get('limit', 50, type=int)
 
@@ -38,8 +54,8 @@ def get_dipinjam():
             'tahun': doc.tahun,
             'status': doc.status,
             'peminjam': doc.peminjam,
-            'tanggal_pinjam': doc.tanggal_pinjam,
-            'batas_kembali': doc.batas_kembali,
+            'tanggal_pinjam': doc.tanggal_pinjam.isoformat() if doc.tanggal_pinjam else "",
+            'batas_kembali': doc.batas_kembali.isoformat() if doc.batas_kembali else "",
             'keperluan': doc.keperluan,
         })
 
@@ -52,13 +68,8 @@ def get_dipinjam():
 
 @sirkulasi_bp.route('/api/mutasi', methods=['POST'])
 @jwt_required()
+@petugas_required
 def proses_mutasi():
-    from models import User
-    identity = get_jwt_identity()
-    user = User.query.filter_by(username=identity).first()
-    if not user or user.role == 'user':
-        return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
-        
     data = request.get_json()
     no_berkas = data.get('no_berkas')
     alasan = data.get('alasan', 'Tanpa Keterangan')
@@ -66,28 +77,11 @@ def proses_mutasi():
     if not no_berkas:
         return jsonify({'status': 'error', 'message': 'Nomor berkas tidak valid'}), 400
         
-    rows = DataBerkas.query.filter_by(no_berkas=no_berkas).all()
-    
-    if not rows:
+    success = _mutasi_satu_berkas(no_berkas, alasan)
+    if not success:
         return jsonify({'status': 'error', 'message': 'Berkas tidak ditemukan'}), 404
-        
-    new_no_berkas = f"EKS-{no_berkas}"
-    for row in rows:
-        row.nama = f"[MUTASI - {alasan}] {row.nama}"
-        
-        if row.isi_berkas and row.isi_berkas != 'Belum diupdate':
-            try:
-                dokumen_list = json.loads(row.isi_berkas)
-                for doc in dokumen_list:
-                    doc['status'] = 'Dimutasi'
-                row.isi_berkas = json.dumps(dokumen_list)
-            except Exception as e:
-                import logging
-                logging.getLogger('gudang').error(f"JSON Corrupt saat mutasi Berkas {row.no_berkas}: {str(e)}")
-        
-        row.no_berkas = new_no_berkas
             
-    from models import ActivityLog
+    identity = get_jwt_identity()
     new_log = ActivityLog(action_type='Mutasi', description=f'Mutasi berkas {no_berkas} — {alasan}', username=identity)
     db.session.add(new_log)
     db.session.commit()
@@ -95,13 +89,8 @@ def proses_mutasi():
 
 @sirkulasi_bp.route('/api/mutasi/bulk', methods=['POST'])
 @jwt_required()
+@petugas_required
 def proses_mutasi_bulk():
-    from models import User
-    identity = get_jwt_identity()
-    user = User.query.filter_by(username=identity).first()
-    if not user or user.role == 'user':
-        return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
-        
     data = request.get_json()
     no_berkas_list = data.get('no_berkas_list', [])
     alasan = data.get('alasan', 'Tanpa Keterangan')
@@ -113,26 +102,10 @@ def proses_mutasi_bulk():
         
     berhasil = 0
     for no_berkas in no_berkas_list:
-        rows = DataBerkas.query.filter_by(no_berkas=no_berkas).all()
-        if rows:
-            new_no_berkas = f"EKS-{no_berkas}"
-            for row in rows:
-                row.nama = f"[MUTASI - {alasan}] {row.nama}"
-                
-                if row.isi_berkas and row.isi_berkas != 'Belum diupdate':
-                    try:
-                        dokumen_list = json.loads(row.isi_berkas)
-                        for doc in dokumen_list:
-                            doc['status'] = 'Dimutasi'
-                        row.isi_berkas = json.dumps(dokumen_list)
-                    except Exception as e:
-                        import logging
-                        logging.getLogger('gudang').error(f"JSON Corrupt saat mutasi bulk Berkas {row.no_berkas}: {str(e)}")
-                
-                row.no_berkas = new_no_berkas
+        if _mutasi_satu_berkas(no_berkas, alasan):
             berhasil += 1
             
-    from models import ActivityLog
+    identity = get_jwt_identity()
     new_log = ActivityLog(action_type='Mutasi', description=f'Mutasi bulk {berhasil} berkas — {alasan}', username=identity)
     db.session.add(new_log)
     db.session.commit()

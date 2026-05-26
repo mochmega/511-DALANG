@@ -64,10 +64,20 @@ export function AuthProvider({ children }) {
 
         const cachedTheme = localStorage.getItem('cachedTheme') || 'sky'
         const cachedMode = localStorage.getItem('cachedMode') || 'dark'
+        
+        let offlineRole = 'user'
+        try {
+          const payloadBase64 = token.split('.')[1]
+          const payload = JSON.parse(atob(payloadBase64))
+          if (payload && payload.role) offlineRole = payload.role
+        } catch (e) {
+          // ignore
+        }
+
         applyDOM(cachedTheme, cachedMode)
         setAuthState({
           token,
-          role: localStorage.getItem('role') || 'user',
+          role: offlineRole,
           username: localStorage.getItem('username') || '',
           theme: cachedTheme,
           mode: cachedMode
@@ -80,6 +90,21 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     validateToken()
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'token') {
+        if (!e.newValue) {
+          // Token dihapus dari tab lain (Logout)
+          clearAuth()
+        } else {
+          // Token berubah dari tab lain (Login user lain)
+          validateToken()
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
   }, [validateToken])
 
   // Dipanggil saat login berhasil

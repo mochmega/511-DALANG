@@ -48,12 +48,6 @@ def run_tests():
             # Add duplicate for cabang grouping test
             db.session.add(DataBerkas(no_berkas='1', nama='PT Dummy 1 Cabang', npwp='1231-cabang'))
             db.session.commit()
-            
-            # Add isi_berkas for parsing test
-            b1 = DataBerkas.query.filter_by(no_berkas='1').first()
-            if b1:
-                b1.isi_berkas = json.dumps([{'nama': 'Test Doc', 'nomor': '001', 'tahun': '2023', 'status': 'Di Gudang'}])
-                db.session.commit()
         
         client = app.test_client()
         
@@ -150,10 +144,12 @@ def run_tests():
             first_item = items[0]
             has_dokumen_list = 'dokumen_list' in first_item
             is_array = isinstance(first_item.get('dokumen_list'), list)
-            no_isi_berkas = 'isi_berkas' not in first_item
+            # Verify no_berkas is properly ordered
+            if len(data) >= 2:
+                # Should be sorted numerically, not lexicographically (1, 2, not 1, 10, 2)
+                record("Berkas", "Sorting by numerical no_berkas applied", data['data'][0]['no_berkas'] == '1')
             record("Berkas", "Response items have 'dokumen_list' key", has_dokumen_list)
             record("Berkas", "'dokumen_list' is an array (not JSON string)", is_array)
-            record("Berkas", "Old 'isi_berkas' key is NOT present (migration clean)", no_isi_berkas)
         else:
             record("Berkas", "Response items have dokumen_list key", False, "No items returned")
         

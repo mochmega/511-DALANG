@@ -1,6 +1,4 @@
-import json
 import os
-import time
 import csv
 import zipfile
 from io import StringIO
@@ -88,6 +86,8 @@ def register():
     username = data.get('username')
     password = data.get('password')
     role = data.get('role', 'user')
+    if role not in ('user', 'petugas', 'superuser'):
+        role = 'user'
 
     if not username or not password:
         return jsonify(status='error', message='Username dan password wajib diisi'), 400

@@ -1,4 +1,3 @@
-import json
 import os
 import time
 import math
@@ -9,11 +8,21 @@ from flask import Blueprint, jsonify, request, send_from_directory, Response
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, func, cast, Integer
 from extensions import db
-from models import DataBerkas, ActivityLog, User
+from models import DataBerkas, ActivityLog, User, Dokumen
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from utils.decorators import superuser_required
+from utils.decorators import superuser_required, petugas_required
 from extensions import limiter
 import magic
+
+def parse_date(date_str):
+    if not date_str or date_str.strip() == "":
+        return None
+    try:
+        # Take only the date part if it's a datetime string
+        clean_date = date_str.split('T')[0]
+        return datetime.strptime(clean_date, "%Y-%m-%d").date()
+    except ValueError:
+        return None
 
 berkas_bp = Blueprint('berkas_bp', __name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -102,16 +111,16 @@ def search_berkas():
                 'nomor': d.nomor,
                 'jenis': d.jenis,
                 'tahun': d.tahun,
-                'tanggal': d.tanggal,
+                'tanggal': d.tanggal.isoformat() if d.tanggal else "",
                 'pemilik': d.pemilik,
                 'wadah': d.wadah,
                 'status': d.status,
                 'peminjam': d.peminjam,
-                'tanggal_pinjam': d.tanggal_pinjam,
-                'tanggal_kembali': d.tanggal_kembali,
+                'tanggal_pinjam': d.tanggal_pinjam.isoformat() if d.tanggal_pinjam else "",
+                'tanggal_kembali': d.tanggal_kembali.isoformat() if d.tanggal_kembali else "",
                 'keperluan': d.keperluan,
                 'file_scan': d.file_scan,
-                'batas_kembali': d.batas_kembali
+                'batas_kembali': d.batas_kembali.isoformat() if d.batas_kembali else ""
             })
             
         hasil.append({
@@ -136,13 +145,9 @@ def search_berkas():
 
 @berkas_bp.route('/api/berkas/update-isi', methods=['POST'])
 @jwt_required()
+@petugas_required
 def update_isi_berkas():
     data = request.get_json()
-    from models import User
-    identity = get_jwt_identity()
-    user = User.query.filter_by(username=identity).first()
-    if not user or user.role == 'user':
-        return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
 
     no_berkas = data.get('no_berkas')
     full_doc_list = data.get('isi_berkas', [])
@@ -158,7 +163,6 @@ def update_isi_berkas():
     if not data_berkas:
         return jsonify({'status': 'error', 'message': 'Berkas tidak ditemukan'}), 404
         
-    from models import Dokumen
     Dokumen.query.filter_by(no_berkas=no_berkas).delete()
         
     # ✅ Sprint 3.1 — Auto-set batas_kembali +7 hari jika status Dipinjam dan belum ada
@@ -173,20 +177,19 @@ def update_isi_berkas():
             nomor=doc.get('nomor', '-'),
             jenis=doc.get('jenis', '-'),
             tahun=doc.get('tahun', '-'),
-            tanggal=doc.get('tanggal', ''),
+            tanggal=parse_date(doc.get('tanggal')),
             pemilik=doc.get('pemilik', ''),
             wadah=doc.get('wadah', ''),
             status=doc.get('status', 'Di Gudang'),
             peminjam=doc.get('peminjam', ''),
-            tanggal_pinjam=doc.get('tanggal_pinjam', ''),
-            tanggal_kembali=doc.get('tanggal_kembali', ''),
+            tanggal_pinjam=parse_date(doc.get('tanggal_pinjam')),
+            tanggal_kembali=parse_date(doc.get('tanggal_kembali')),
             keperluan=doc.get('keperluan', ''),
             file_scan=doc.get('file_scan', ''),
-            batas_kembali=doc.get('batas_kembali', '')
+            batas_kembali=parse_date(doc.get('batas_kembali'))
         )
         db.session.add(new_doc)
         
-    # data_berkas.isi_berkas = json.dumps(full_doc_list) if full_doc_list else '[]' # MED-2: Hentikan double-write
 
     if log_action and log_desc:
         new_log = ActivityLog(action_type=log_action, description=log_desc, username=username)
@@ -232,13 +235,8 @@ def saran_nomor():
 
 @berkas_bp.route('/api/registrasi', methods=['POST'])
 @jwt_required()
+@petugas_required
 def proses_registrasi():
-    from models import User
-    identity = get_jwt_identity()
-    user = User.query.filter_by(username=identity).first()
-    if not user or user.role == 'user':
-        return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
-
     data = request.get_json()
     no_berkas = data.get('no_berkas')
     nama = data.get('nama')
@@ -258,8 +256,7 @@ def proses_registrasi():
         nama=nama.upper(),
         npwp=npwp,
         npwp_16=npwp_16,
-        nitku=nitku,
-        isi_berkas='[]'
+        nitku=nitku
     )
     db.session.add(new_berkas)
     db.session.commit()
@@ -330,30 +327,24 @@ def export_csv():
         npwp = row.npwp
         npwp_16 = row.npwp_16
         nitku = row.nitku
-        isi = row.isi_berkas
+        docs = row.dokumen
         
-        if isi and isi != 'Belum diupdate' and isi != '[]':
-            try:
-                dokumen_list = json.loads(isi)
-                for doc in dokumen_list:
-                    cw.writerow([
-                        no_berkas,
-                        nama,
-                        npwp,
-                        npwp_16,
-                        nitku,
-                        doc.get('nama', '-'),
-                        doc.get('nomor', '-'),
-                        doc.get('tahun', '-'),
-                        doc.get('status', 'Di Gudang'),
-                        doc.get('peminjam', '-'),
-                        doc.get('tanggal_pinjam', '-'),
-                        doc.get('file_scan', '-')
-                    ])
-            except Exception as e:
-                import logging
-                logging.getLogger('gudang').error(f"JSON Corrupt saat export CSV Berkas {no_berkas}: {str(e)}")
-                cw.writerow([no_berkas, nama, npwp, npwp_16, nitku, 'Gagal Membaca Data Dokumen', '-', '-', '-', '-', '-', '-'])
+        if docs:
+            for doc in docs:
+                cw.writerow([
+                    no_berkas,
+                    nama,
+                    npwp,
+                    npwp_16,
+                    nitku,
+                    doc.nama,
+                    doc.nomor,
+                    doc.tahun,
+                    doc.status,
+                    doc.peminjam or '-',
+                    doc.tanggal_pinjam.isoformat() if doc.tanggal_pinjam else '-',
+                    doc.file_scan or '-'
+                ])
         else:
             cw.writerow([no_berkas, nama, npwp, npwp_16, nitku, '(Wadah Kosong / Belum Ada Dokumen)', '-', '-', '-', '-', '-', '-'])
 
@@ -367,7 +358,7 @@ def export_csv():
 def cari_dokumen():
     """
     Sprint 4 — Pencarian dokumen lintas berkas.
-    Mencari di dalam JSON blob isi_berkas setiap DataBerkas.
+    Mencari di tabel Dokumen (JOIN ke DataBerkas).
     Query params: q, status, tahun, page
     """
     q = request.args.get('q', '').strip().lower()
@@ -378,7 +369,6 @@ def cari_dokumen():
     offset = (page - 1) * limit
 
     # Ambil semua berkas yang punya isi_berkas valid (bukan EKS-)
-    from models import Dokumen
     
     query = db.session.query(Dokumen, DataBerkas).join(
         DataBerkas, Dokumen.no_berkas == DataBerkas.no_berkas
@@ -416,12 +406,12 @@ def cari_dokumen():
             'nomor': doc.nomor,
             'jenis': doc.jenis,
             'tahun': doc.tahun,
-            'tanggal': doc.tanggal,
+            'tanggal': doc.tanggal.isoformat() if doc.tanggal else "",
             'pemilik': doc.pemilik,
             'status': doc.status,
             'peminjam': doc.peminjam,
-            'tanggal_pinjam': doc.tanggal_pinjam,
-            'batas_kembali': doc.batas_kembali,
+            'tanggal_pinjam': doc.tanggal_pinjam.isoformat() if doc.tanggal_pinjam else "",
+            'batas_kembali': doc.batas_kembali.isoformat() if doc.batas_kembali else "",
             'keperluan': doc.keperluan,
             'file_scan': doc.file_scan,
         })

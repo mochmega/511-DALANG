@@ -101,8 +101,15 @@ function AppLayout() {
 
   // AUTO-LOGOUT & IDLE TIMEOUT LOGIC
   const idleTimeoutRef = useRef(null)
+  const throttleRef = useRef(false)
 
   const resetIdleTimer = () => {
+    // Throttling: Jangan reset timer jika belum lewat 2 detik sejak reset terakhir (Mencegah CPU Freeze dari mousemove)
+    if (throttleRef.current) return
+    
+    throttleRef.current = true
+    setTimeout(() => { throttleRef.current = false }, 2000)
+
     if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current)
     idleTimeoutRef.current = setTimeout(() => {
       showAlert("Sesi Anda telah berakhir karena tidak ada aktivitas selama 10 menit.", "error")
@@ -115,7 +122,7 @@ function AppLayout() {
     const activityHandler = () => resetIdleTimer()
 
     events.forEach(evt => window.addEventListener(evt, activityHandler))
-    resetIdleTimer()
+    resetIdleTimer() // Inisialisasi pertama kali
 
     return () => {
       if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current)
@@ -233,7 +240,7 @@ function AppLayout() {
 export default function App() {
 
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <Routes>
         {/* JALUR PUBLIK: Halaman Login berdiri sendiri tanpa Sidebar */}
         <Route path="/login" element={<Login />} />

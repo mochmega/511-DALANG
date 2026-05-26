@@ -1,11 +1,12 @@
-import json
 import math
 from datetime import date, timedelta
 from flask import Blueprint, jsonify, request
 from extensions import db
 from models import User, DataBerkas, Dokumen, ActivityLog
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask import jsonify
+import logging
+
+logger = logging.getLogger('gudang.routes.dashboard')
 
 dashboard_bp = Blueprint('dashboard_bp', __name__)
 
@@ -30,14 +31,13 @@ def get_dashboard_stats():
     ).count()
             
     # Terlambat Kembali
-    hari_ini = date.today().isoformat()
+    hari_ini = date.today()
     total_terlambat = db.session.query(Dokumen).join(
         DataBerkas, Dokumen.no_berkas == DataBerkas.no_berkas
     ).filter(
         DataBerkas.no_berkas.notlike('EKS-%'),
         Dokumen.status == 'Dipinjam',
         Dokumen.batas_kembali != None,
-        Dokumen.batas_kembali != '',
         Dokumen.batas_kembali < hari_ini
     ).count()
             
@@ -52,7 +52,7 @@ def get_dashboard_stats():
         'action_type': log.action_type,
         'description': log.description,
         'username': log.username,
-        'created_at': log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else ''
+        'created_at': log.created_at.isoformat() + 'Z' if log.created_at else ''
     } for log in logs_raw]
     
     return jsonify({
@@ -102,7 +102,7 @@ def get_activity_log():
         'action_type': log.action_type,
         'description': log.description,
         'username': log.username,
-        'created_at': log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else ''
+        'created_at': log.created_at.isoformat() + 'Z' if log.created_at else ''
     } for log in logs]
 
     return jsonify({
@@ -156,18 +156,24 @@ def get_statistik():
         # Hitung dari Dokumen yang status-nya 'Dipinjam' per bulan
         tren_peminjaman = []
         today = date.today()
+        import datetime
+        from sqlalchemy import extract
         for i in range(5, -1, -1):
-            # Hitung bulan mundur
-            target_date = today.replace(day=1) - timedelta(days=i * 30)
-            year = target_date.year
-            month = target_date.month
-            bulan_label = f"{year}-{month:02d}"
+            # Hitung bulan mundur secara akurat
+            month = today.month - i
+            year = today.year
+            if month <= 0:
+                year -= (abs(month) // 12) + 1
+                month = 12 - (abs(month) % 12)
+                
+            target_date = datetime.date(year, month, 1)
             label_display = target_date.strftime('%b %Y') # Contoh: May 2026
 
             jumlah = db.session.query(func.count(Dokumen.id))\
                 .filter(
                     Dokumen.status == 'Dipinjam',
-                    Dokumen.tanggal_pinjam.like(f"{bulan_label}%")
+                    extract('year', Dokumen.tanggal_pinjam) == year,
+                    extract('month', Dokumen.tanggal_pinjam) == month
                 ).scalar() or 0
 
             tren_peminjaman.append({'label': label_display, 'total': jumlah})
@@ -180,7 +186,8 @@ def get_statistik():
         }), 200
 
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.error(f"Statistik error: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': 'Terjadi kesalahan internal'}), 500
 
 @dashboard_bp.route('/api/server/storage', methods=['GET'])
 @jwt_required()
@@ -255,4 +262,5 @@ def get_storage_info():
             }
         })
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.error(f"Storage info error: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': 'Terjadi kesalahan internal'}), 500

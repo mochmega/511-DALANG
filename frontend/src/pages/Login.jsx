@@ -16,9 +16,13 @@ export default function Login() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Tendang pengguna kembali ke dashboard jika sudah punya sesi (Mencegah bug bolak-balik login)
+    if (auth) {
+      navigate('/', { replace: true })
+    }
     // Sinkronkan state lokal dengan mode yang diterapkan AuthContext
     setIsLightMode(document.documentElement.getAttribute('data-mode') === 'light')
-  }, [auth?.mode])
+  }, [auth, navigate])
 
   const handleLogin = async (e) => {
     e.preventDefault()

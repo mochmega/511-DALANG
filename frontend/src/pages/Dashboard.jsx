@@ -141,8 +141,8 @@ export default function Dashboard() {
             <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
               <span>📈</span> Tren Peminjaman 6 Bulan Terakhir
             </h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={statistik.tren_peminjaman}>
+            <div className="w-full h-[250px] overflow-x-auto overflow-y-hidden flex items-center">
+              <LineChart width={550} height={240} data={statistik.tren_peminjaman}>
                 <XAxis
                   dataKey="label"
                   stroke="#475569"
@@ -163,42 +163,76 @@ export default function Dashboard() {
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
-            </ResponsiveContainer>
+            </div>
           </div>
 
-          {/* PIE CHART: Distribusi Jenis Dokumen */}
+          {/* PIE CHART: Distribusi Jenis Dokumen — Pure CSS (no Recharts SVG) */}
           <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
             <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
               <span>📊</span> Distribusi Jenis Dokumen (Top 8)
             </h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={statistik.distribusi_jenis}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="total"
-                  nameKey="jenis"
-                >
-                  {statistik.distribusi_jenis.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip {...TOOLTIP_STYLE} />
-                <Legend wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {(() => {
+              const pieData = (statistik.distribusi_jenis || [])
+                .map(d => ({ ...d, total: Number(d.total) || 0 }))
+                .filter(d => d.total > 0);
+              const sum = pieData.reduce((acc, curr) => acc + curr.total, 0);
+
+              if (sum === 0) {
+                return <div className="text-slate-500 italic text-sm text-center py-10">Belum ada dokumen</div>;
+              }
+
+              // Build conic-gradient stops
+              let cumulative = 0;
+              const stops = pieData.map((d, i) => {
+                const start = cumulative;
+                const end = cumulative + (d.total / sum) * 100;
+                cumulative = end;
+                return `${PIE_COLORS[i % PIE_COLORS.length]} ${start}% ${end}%`;
+              });
+
+              return (
+                <div className="flex items-center justify-center gap-8 py-4">
+                  {/* Donut */}
+                  <div
+                    style={{
+                      width: 160,
+                      height: 160,
+                      borderRadius: '50%',
+                      background: `conic-gradient(${stops.join(', ')})`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div className="w-[96px] h-[96px] rounded-full bg-slate-900 flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">{sum}</span>
+                    </div>
+                  </div>
+                  {/* Legend */}
+                  <div className="flex flex-col gap-2">
+                    {pieData.map((d, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <span
+                          className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}
+                        />
+                        <span className="text-slate-400">{d.jenis}</span>
+                        <span className="text-slate-500 ml-auto pl-3">{d.total}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
-          
+
         </div>
       )}
 
       {/* SECTION BAWAH: Top WP dan Aktivitas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* TOP WP */}
         <div className="lg:col-span-1">
           <h3 className="text-xl font-bold text-slate-200 mb-4 flex items-center gap-2">
@@ -233,7 +267,7 @@ export default function Dashboard() {
                 let icon = '📝'
                 let color = 'slate'
                 let badgeText = log.action_type
-                
+
                 if (log.action_type === 'Registrasi') {
                   icon = '📦'
                   color = 'emerald'

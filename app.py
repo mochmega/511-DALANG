@@ -27,21 +27,31 @@ logging.basicConfig(
 logger = logging.getLogger('gudang')
 
 # --- ROBOT AUTO BACKUP (JALAN DI LATAR BELAKANG) ---
-def auto_backup_worker():
+def auto_backup_worker(app_context_app):
     _BASE = os.path.dirname(os.path.abspath(__file__))
     backup_folder = os.path.join(_BASE, 'backups')
     os.makedirs(backup_folder, exist_ok=True)
+    
+    from sqlalchemy.engine import make_url
+    db_uri = app_context_app.config['SQLALCHEMY_DATABASE_URI']
+    db_path = make_url(db_uri).database  # resolve path aktual
+    if not os.path.isabs(db_path):
+        db_path = os.path.join(_BASE, db_path)
     
     while True:
         now = datetime.datetime.now()
         # Eksekusi backup setiap jam 02:00 Pagi
         if now.hour == 2 and now.minute == 0:
-            db_path = os.path.join(_BASE, 'instance', 'gudang.db')
             backup_name = os.path.join(backup_folder, f"gudang_backup_{now.strftime('%Y%m%d')}.db")
             
             if os.path.exists(db_path) and not os.path.exists(backup_name):
-                shutil.copy(db_path, backup_name)
-                logger.info(f"AUTO-BACKUP BERHASIL: {backup_name}")
+                try:
+                    shutil.copy(db_path, backup_name)
+                    logger.info(f"AUTO-BACKUP BERHASIL: {backup_name}")
+                except Exception as e:
+                    logger.error(f"AUTO-BACKUP GAGAL saat menyalin: {e}")
+            elif not os.path.exists(db_path) and now.minute == 0:
+                logger.error(f"AUTO-BACKUP GAGAL: File database '{db_path}' tidak ditemukan!")
                 
         time.sleep(60) # Cek jam setiap 1 menit
 
@@ -103,7 +113,7 @@ def run_migrations(app):
             logger.info('✅ Database migration: up to date')
         except Exception as e:
             logger.error(f'❌ Migration gagal: {e}')
-            raise
+            logger.warning('⚠️ Aplikasi tetap dilanjutkan (fallback), tapi awas ada skema database yang mungkin tidak sinkron!')
 
 # --- FUNGSI INISIALISASI DB ---
 def init_db():
@@ -128,6 +138,6 @@ def init_db():
 if __name__ == '__main__':
     init_db()
     # Hidupkan robotnya (Daemon = True agar mati otomatis kalau Flask dimatikan)
-    threading.Thread(target=auto_backup_worker, daemon=True).start()
+    threading.Thread(target=auto_backup_worker, args=(app,), daemon=True).start()
     logger.info("Backend API Flask menyala di port 5000")
     app.run(debug=False, host='0.0.0.0', port=5000)
