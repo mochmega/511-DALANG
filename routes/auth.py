@@ -25,6 +25,7 @@ def login():
         access_token = create_access_token(identity=str(user.username), additional_claims={'role': user.role})
         return jsonify(status='success', token=access_token, role=user.role, theme=user.theme, mode=user.mode)
     
+    logger.warning(f"Percobaan login gagal untuk username: '{data.get('username')}' dari IP: {request.remote_addr}")
     return jsonify(status='error', message='Username atau Password salah'), 401
 
 

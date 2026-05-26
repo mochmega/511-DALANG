@@ -156,7 +156,6 @@ def get_statistik():
         # Hitung dari Dokumen yang status-nya 'Dipinjam' per bulan
         tren_peminjaman = []
         today = date.today()
-        import datetime
         from sqlalchemy import extract
         for i in range(5, -1, -1):
             # Hitung bulan mundur secara akurat
@@ -166,7 +165,7 @@ def get_statistik():
                 year -= (abs(month) // 12) + 1
                 month = 12 - (abs(month) % 12)
                 
-            target_date = datetime.date(year, month, 1)
+            target_date = date(year, month, 1)
             label_display = target_date.strftime('%b %Y') # Contoh: May 2026
 
             jumlah = db.session.query(func.count(Dokumen.id))\

@@ -6,6 +6,6 @@ from app import app, init_db, auto_backup_worker, logger
 logger.info("WSGI: Menjalankan inisialisasi database (init_db)...")
 init_db()
 
-# Hidupkan robot auto backup di background (Daemon = True)
+# Jalankan thread daemon untuk layanan pencadangan otomatis (background task)
 threading.Thread(target=auto_backup_worker, args=(app,), daemon=True).start()
-logger.info("WSGI: Background auto-backup worker berhasil dinyalakan.")
+logger.info("WSGI: Layanan pencadangan otomatis di latar belakang berhasil diaktifkan.")

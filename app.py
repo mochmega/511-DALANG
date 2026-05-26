@@ -26,7 +26,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger('gudang')
 
-# --- ROBOT AUTO BACKUP (JALAN DI LATAR BELAKANG) ---
+# --- LAYANAN CADANGAN OTOMATIS (BACKGROUND DAEMON) ---
 def auto_backup_worker(app_context_app):
     _BASE = os.path.dirname(os.path.abspath(__file__))
     backup_folder = os.path.join(_BASE, 'backups')
@@ -137,7 +137,7 @@ def init_db():
 
 if __name__ == '__main__':
     init_db()
-    # Hidupkan robotnya (Daemon = True agar mati otomatis kalau Flask dimatikan)
+    # Jalankan thread daemon untuk layanan pencadangan otomatis berkas database
     threading.Thread(target=auto_backup_worker, args=(app,), daemon=True).start()
     logger.info("Backend API Flask menyala di port 5000")
     app.run(debug=False, host='0.0.0.0', port=5000)

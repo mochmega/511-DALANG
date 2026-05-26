@@ -1,12 +1,12 @@
 # ==============================================
 # CI/CD Pipeline — Gudang Berkas (511 DALANG)
 # ==============================================
-# Robot ini akan otomatis berjalan setiap kali ada push ke main.
-# Dia akan:
-#   1. Setup Python environment
-#   2. Install dependencies
-#   3. Jalankan test suite (pytest)
-#   4. Laporkan hasilnya di tab "Actions" GitHub
+# Alur kerja (workflow) pengujian otomatis ini berjalan setiap kali ada push atau PR ke main.
+# Alur kerja ini akan melakukan:
+#   1. Menyiapkan lingkungan (environment) Python
+#   2. Menginstal pustaka ketergantungan (dependencies)
+#   3. Menjalankan rangkaian unit pengujian (pytest)
+#   4. Melaporkan hasil pengujian pada tab "Actions" GitHub
 
 name: "CI — Backend Tests"
 
