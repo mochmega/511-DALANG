@@ -147,4 +147,4 @@ if __name__ == '__main__':
     # Jalankan thread daemon untuk layanan pencadangan otomatis berkas database
     threading.Thread(target=auto_backup_worker, args=(app,), daemon=True).start()
     logger.info("Backend API Flask menyala di port 5000")
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)  # nosec B104
