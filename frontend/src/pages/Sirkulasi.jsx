@@ -45,7 +45,7 @@ export default function Sirkulasi() {
   }
 
   // FUNGSI PENCARIAN
-  const handleCari = useCallback(async (currentPage = page, currentLimit = limit) => {
+  const handleCari = useCallback(async (currentPage = 1, currentLimit = limit) => {
     try {
       const token = auth?.token
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/berkas?search=${encodeURIComponent(query)}&by=${encodeURIComponent(searchBy)}&page=${currentPage}&limit=${currentLimit}`, {
@@ -77,7 +77,7 @@ export default function Sirkulasi() {
       console.error("Gagal mencari data:", error)
       showAlert("Gagal memuat data. Periksa koneksi ke server.", "error")
     }
-  }, [auth?.token, query, searchBy, showAlert, page, limit])
+  }, [auth?.token, query, searchBy, showAlert, limit])
 
   // --- ROBOT LIVE SEARCH AUTOMATIC ---
   useEffect(() => {

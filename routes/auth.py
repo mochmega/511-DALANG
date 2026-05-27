@@ -16,7 +16,7 @@ logger = logging.getLogger('gudang.routes.auth')
 auth_bp = Blueprint('auth_bp', __name__)
 
 @auth_bp.route('/api/login', methods=['POST'])
-@limiter.limit("20 per minute")
+@limiter.limit("200 per minute")
 def login():
     data = request.json
     user = User.query.filter_by(username=data.get('username')).first()

@@ -4,6 +4,12 @@ import logging
 import datetime
 from datetime import timedelta
 from dotenv import load_dotenv
+
+# Konfigurasi basis path & .env
+_BASE = os.path.dirname(os.path.abspath(__file__))
+env_path = os.path.join(_BASE, '.env')
+load_dotenv(dotenv_path=env_path)
+
 from flask import Flask
 from flask_cors import CORS
 from extensions import db, jwt, limiter
@@ -28,7 +34,6 @@ logger = logging.getLogger('gudang')
 
 # --- LAYANAN CADANGAN OTOMATIS (BACKGROUND DAEMON) ---
 def auto_backup_worker(app_context_app):
-    _BASE = os.path.dirname(os.path.abspath(__file__))
     backup_folder = os.path.join(_BASE, 'backups')
     os.makedirs(backup_folder, exist_ok=True)
     
@@ -64,10 +69,7 @@ if os.environ.get("TRUST_PROXIES", "False") == "True":
     from werkzeug.middleware.proxy_fix import ProxyFix
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
-# Konfigurasi
-_BASE = os.path.dirname(os.path.abspath(__file__))
-env_path = os.path.join(_BASE, '.env')
-load_dotenv(dotenv_path=env_path)
+# Konfigurasi Flask dari env
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///gudang.db')
 app.config['TESTING'] = os.environ.get('TESTING', 'False') == 'True'
 
@@ -96,10 +98,10 @@ db.init_app(app)
 jwt.init_app(app)
 limiter.init_app(app)
 
-# Batasan limit global (60 req / min) untuk perlindungan DoS / Scraping
-limiter.limit("60 per minute")(berkas_bp)
-limiter.limit("60 per minute")(sirkulasi_bp)
-limiter.limit("60 per minute")(dashboard_bp)
+# Batasan limit per-blueprint - dilonggarkan untuk local server (fast respond, low security)
+limiter.limit("500 per minute")(berkas_bp)
+limiter.limit("500 per minute")(sirkulasi_bp)
+limiter.limit("500 per minute")(dashboard_bp)
 
 # Daftar Blueprint
 app.register_blueprint(auth_bp)

@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request, send_from_directory, Response
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, func, cast, Integer
+from sqlalchemy.orm import joinedload
 from extensions import db
 from models import DataBerkas, ActivityLog, User, Dokumen
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -307,9 +308,9 @@ def get_file(filepath):
 
 @berkas_bp.route('/api/export/csv', methods=['GET'])
 @jwt_required()
-@limiter.limit("5 per minute")
+@limiter.limit("100 per minute")
 def export_csv():
-    rows = DataBerkas.query.order_by(cast(DataBerkas.no_berkas, Integer).asc(), DataBerkas.nitku.asc()).all()
+    rows = DataBerkas.query.options(joinedload(DataBerkas.dokumen)).order_by(cast(DataBerkas.no_berkas, Integer).asc(), DataBerkas.nitku.asc()).all()
 
     si = StringIO()
     cw = csv.writer(si, delimiter=';') 
@@ -354,7 +355,7 @@ def export_csv():
 
 @berkas_bp.route('/api/dokumen/cari', methods=['GET'])
 @jwt_required()
-@limiter.limit("20 per minute")
+@limiter.limit("300 per minute")
 def cari_dokumen():
     """
     Sprint 4 — Pencarian dokumen lintas berkas.
