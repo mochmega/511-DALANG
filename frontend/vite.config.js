@@ -11,7 +11,12 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       react()
     ],
-  server: {
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      include: ['src/tests/**/*.test.{js,jsx}']
+    },
+    server: {
     port: 5173,
     strictPort: true
   },

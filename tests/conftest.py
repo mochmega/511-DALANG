@@ -16,8 +16,18 @@ from extensions import db
 
 @pytest.fixture
 def app():
+    import shutil
+    import os
+    
+    src_path = os.path.join(flask_app.instance_path, 'load_test.db')
+    dst_path = os.path.join(flask_app.instance_path, 'test_gudang.db')
+    
+    # Salin load_test.db untuk diuji (Session Sandbox) agar data asli tetap aman
+    if os.path.exists(src_path):
+        shutil.copy(src_path, dst_path)
+        
     with flask_app.app_context():
-        init_db()  # Ini akan bikin tabel gudang.db via SQLAlchemy (User, Dokumen, DataBerkas, ActivityLog)
+        init_db()  # Menjamin skema up-to-date dan superuser admin disetup jika belum ada
     
     yield flask_app
 
@@ -26,20 +36,12 @@ def app():
         db.session.remove()
         db.engine.dispose()
     
-    # Delete the test database file to ensure a clean slate for the next test run,
-    # including removing the alembic_version table.
-    import os
-    db_path = os.path.join(flask_app.instance_path, 'test_gudang.db')
-    if os.path.exists(db_path):
+    # Hapus salinan sementara agar tidak meninggalkan file sampah
+    if os.path.exists(dst_path):
         try:
-            os.remove(db_path)
+            os.remove(dst_path)
         except Exception:
             pass
-
-    try:
-        os.remove('instance/test_gudang.db')
-    except:
-        pass
 
 @pytest.fixture
 def client(app):

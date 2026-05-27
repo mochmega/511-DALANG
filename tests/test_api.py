@@ -109,3 +109,16 @@ def test_user_cannot_access_admin_endpoints(client, user_token):
     # 3. Coba unduh backup database (khusus superuser)
     res = client.get('/api/export-db', headers=hdrs)
     assert res.status_code == 403
+
+def test_path_traversal_prevention(client, superuser_token):
+    hdrs = {'Authorization': f'Bearer {superuser_token}'}
+    
+    # Cobalah melakukan path traversal untuk mengakses berkas di luar uploads/
+    res = client.get('/api/files/../instance/load_test.db', headers=hdrs)
+    assert res.status_code in [404, 400]
+    
+    res = client.get('/api/files/../../app.py', headers=hdrs)
+    assert res.status_code in [404, 400]
+    
+    res = client.get('/api/files/%2e%2e%2f%2e%2e%2fapp.py', headers=hdrs)
+    assert res.status_code in [404, 400]
