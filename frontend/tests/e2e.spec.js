@@ -17,7 +17,7 @@ test.describe('E2E Testing - APLIKASI GUDANG', () => {
     await page.locator('button:has-text("LOGIN")').click();
 
     // Verifikasi redirect ke dashboard
-    await expect(page).toHaveURL(/.*\/dashboard/);
+    await expect(page).toHaveURL(baseURL + '/');
     
     // Verifikasi ada teks Dashboard 511 DALANG
     await expect(page.locator('text=Dashboard 511 DALANG')).toBeVisible();
@@ -32,7 +32,7 @@ test.describe('E2E Testing - APLIKASI GUDANG', () => {
     await page.locator('input[type="text"]').fill('admin123');
     await page.locator('input[type="password"]').fill('admin123');
     await page.locator('button:has-text("LOGIN")').click();
-    await expect(page).toHaveURL(/.*\/dashboard/);
+    await expect(page).toHaveURL(baseURL + '/');
 
     // Cari tombol toggle mode di sidebar
     // Di Navbar biasanya ada tombol theme, kita bisa cari berdasarkan title atau aria-label
@@ -52,7 +52,7 @@ test.describe('E2E Testing - APLIKASI GUDANG', () => {
     await page.locator('input[type="text"]').fill('admin123');
     await page.locator('input[type="password"]').fill('admin123');
     await page.locator('button:has-text("LOGIN")').click();
-    await expect(page).toHaveURL(/.*\/dashboard/);
+    await expect(page).toHaveURL(baseURL + '/');
 
     // Klik menu Pencarian di Sidebar
     await page.locator('a[href="/pencarian"]').click();
