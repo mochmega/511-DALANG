@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAlert } from '../context/AlertContext'
 import { highlightText } from '../utils/highlight'
+import { viewFileWithAuth } from '../utils/api'
 import Pagination from '../components/Pagination'
 import UniversalSearch from '../components/UniversalSearch'
 
@@ -347,13 +348,12 @@ export default function CariDokumen() {
                 </button>
                 
                 {modalDoc.file_scan ? (
-                  <a 
-                    href={`${import.meta.env.VITE_API_URL}/api/download/${modalDoc.file_scan.split('/').pop()}`}
-                    target="_blank" rel="noreferrer"
+                  <button 
+                    onClick={() => viewFileWithAuth(import.meta.env.VITE_API_URL, auth, modalDoc.file_scan, showAlert)}
                     className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md"
                   >
                     👁️ Lihat File Scan
-                  </a>
+                  </button>
                 ) : (
                   <button 
                     disabled

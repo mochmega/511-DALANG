@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useAlert } from '../context/AlertContext'
 import { useAuth } from '../context/AuthContext'
 
@@ -73,11 +74,13 @@ export default function Registrasi() {
   // ==========================================
   const [fileMassal, setFileMassal] = useState(null)
   const [isLoadingMassal, setIsLoadingMassal] = useState(false)
+  const [csvPreviewData, setCsvPreviewData] = useState(null)
+  const [showCsvPreview, setShowCsvPreview] = useState(false)
   const fileInputRef = useRef(null)
 
   const handleDownloadTemplate = () => {
-    // Generate CSV template langsung dari Frontend
-    const csvContent = "data:text/csv;charset=utf-8,NAMA_WP,NPWP_15,NPWP_16,NITKU\nPT MAJU BERSAMA,01.234.567.8-901.000,1234567890123456,1234567890123456789012\nCV JAYA ABADI,02.345.678.9-012.000,2345678901234567,";
+    // Generate CSV template langsung dari Frontend (tambahkan \t untuk mencegah exponential di Excel)
+    const csvContent = "data:text/csv;charset=utf-8,NAMA_WP,NPWP_15,NPWP_16,NITKU\nPT MAJU BERSAMA,\t01.234.567.8-901.000,\t1234567890123456,\t1234567890123456789012\nCV JAYA ABADI,\t02.345.678.9-012.000,\t2345678901234567,";
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -91,12 +94,43 @@ export default function Registrasi() {
     e.preventDefault()
     if (!fileMassal) return showAlert("Pilih file Excel/CSV terlebih dahulu!", "error")
     
+    const fileExt = fileMassal.name.split('.').pop().toLowerCase()
+    if (fileExt === 'csv') {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const text = event.target.result
+        const lines = text.split('\n')
+        if (lines.length < 2) return showAlert("File CSV kosong atau tidak valid", "error")
+        
+        const parsedData = []
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim()
+          if (!line) continue
+          const cols = line.split(',')
+          if (cols.length >= 2) {
+            parsedData.push({
+              nama: cols[0]?.trim().replace(/^"|"$/g, '') || '',
+              npwp_15: cols[1]?.trim().replace(/^\t/, '').replace(/^"|"$/g, '') || '',
+              npwp_16: cols[2]?.trim().replace(/^\t/, '').replace(/^"|"$/g, '') || '',
+              nitku: (cols[3] || '').trim().replace(/^\t/, '').replace(/^"|"$/g, '') || ''
+            })
+          }
+        }
+        setCsvPreviewData(parsedData)
+        setShowCsvPreview(true)
+      }
+      reader.readAsText(fileMassal)
+    } else {
+      // Direct upload untuk Excel
+      await uploadDataMassal(new FormData())
+    }
+  }
+
+  const uploadDataMassal = async (formDataUpload) => {
     setIsLoadingMassal(true)
-    const formDataUpload = new FormData()
-    formDataUpload.append('file', fileMassal)
+    if (!formDataUpload.has('file')) formDataUpload.append('file', fileMassal)
 
     try {
-      // Endpoint ini harus dibuat di Flask backend nanti
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/registrasi/massal`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -108,6 +142,8 @@ export default function Registrasi() {
         showAlert(`SUCCESS:\n${data.message}`, "success")
         setFileMassal(null)
         if(fileInputRef.current) fileInputRef.current.value = ""
+        setShowCsvPreview(false)
+        setCsvPreviewData(null)
       } else {
         showAlert(`Gagal: ${data.message}`, "error")
       }
@@ -116,6 +152,21 @@ export default function Registrasi() {
     } finally {
       setIsLoadingMassal(false)
     }
+  }
+
+  const submitCsvData = async () => {
+    let csvString = "NAMA_WP,NPWP_15,NPWP_16,NITKU\n"
+    csvPreviewData.forEach(row => {
+      if (row.nama) {
+        csvString += `"${row.nama}",\t${row.npwp_15},\t${row.npwp_16},\t${row.nitku}\n`
+      }
+    })
+
+    const blob = new Blob([csvString], { type: 'text/csv' })
+    const formData = new FormData()
+    formData.append('file', blob, 'upload.csv')
+    
+    await uploadDataMassal(formData)
   }
 
   return (
@@ -272,6 +323,73 @@ export default function Registrasi() {
         </div>
       )}
 
+      {showCsvPreview && csvPreviewData && createPortal(
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="p-5 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
+              <h5 className="font-bold text-lg text-white">Preview Data Registrasi CSV</h5>
+              <button className="text-slate-400 hover:text-white" onClick={() => setShowCsvPreview(false)}>✕</button>
+            </div>
+            
+            <div className="p-5 overflow-y-auto flex-1">
+              <p className="text-sm text-slate-400 mb-4">Silakan periksa dan perbaiki data registrasi jika ada yang salah sebelum dikirim. Kolom angka (NPWP/NITKU) akan disimpan sebagai teks.</p>
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="pb-2 w-10">No</th>
+                    <th className="pb-2">Nama WP</th>
+                    <th className="pb-2">NPWP 15</th>
+                    <th className="pb-2">NPWP 16</th>
+                    <th className="pb-2">NITKU</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {csvPreviewData.map((row, idx) => (
+                    <tr key={idx} className="border-b border-slate-800">
+                      <td className="py-2">{idx + 1}</td>
+                      <td className="py-2 pr-2">
+                        <input className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1" value={row.nama} onChange={(e) => {
+                          const newData = [...csvPreviewData]
+                          newData[idx].nama = e.target.value
+                          setCsvPreviewData(newData)
+                        }} />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1" value={row.npwp_15} onChange={(e) => {
+                          const newData = [...csvPreviewData]
+                          newData[idx].npwp_15 = e.target.value
+                          setCsvPreviewData(newData)
+                        }} />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1" value={row.npwp_16} onChange={(e) => {
+                          const newData = [...csvPreviewData]
+                          newData[idx].npwp_16 = e.target.value
+                          setCsvPreviewData(newData)
+                        }} />
+                      </td>
+                      <td className="py-2">
+                        <input className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1" value={row.nitku} onChange={(e) => {
+                          const newData = [...csvPreviewData]
+                          newData[idx].nitku = e.target.value
+                          setCsvPreviewData(newData)
+                        }} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-5 border-t border-slate-800 bg-slate-900/50 flex justify-end gap-3">
+              <button onClick={() => setShowCsvPreview(false)} className="px-6 py-2 rounded-lg font-bold text-slate-300 bg-slate-800 hover:bg-slate-700">Batal</button>
+              <button onClick={submitCsvData} disabled={isLoadingMassal} className="px-6 py-2 rounded-lg font-bold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50">
+                {isLoadingMassal ? 'Memproses...' : '🚀 MULAI MIGRASI DATA'}
+              </button>
+            </div>
+          </div>
+        </div>
+      , document.body)}
     </div>
   )
 }

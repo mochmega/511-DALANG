@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import UniversalSearch from '../components/UniversalSearch'
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
+import { DateMaskInput } from '../components/DateMaskInput'
 import Pagination from '../components/Pagination'
 import { highlightText } from '../utils/highlight'
 import { useAlert } from '../context/AlertContext'
@@ -368,7 +371,18 @@ export default function Sirkulasi() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 mb-1">Tanggal Pinjam</label>
-                    <input type="date" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" value={tanggalPinjam} onChange={(e) => setTanggalPinjam(e.target.value)} />
+                    <DatePicker 
+                      selected={tanggalPinjam ? new Date(tanggalPinjam) : null}
+                      onChange={(date) => setTanggalPinjam(date ? date.toISOString().split('T')[0] : '')}
+                      dateFormat="dd/MM/yyyy"
+                      customInput={<DateMaskInput />}
+                      placeholderText="DD/MM/YYYY"
+                      showMonthDropdown
+                      showYearDropdown
+                      scrollableYearDropdown
+                      yearDropdownItemNumber={5}
+                      dropdownMode="select"
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 mb-1">Keperluan / Alasan</label>

@@ -87,7 +87,7 @@ def register():
     username = data.get('username')
     password = data.get('password')
     role = data.get('role', 'user')
-    if role not in ('user', 'petugas', 'superuser'):
+    if role not in ('user', 'petugas'):
         role = 'user'
 
     if not username or not password:
@@ -133,6 +133,27 @@ def delete_user(username):
     db.session.delete(user)
     db.session.commit()
     return jsonify(status='success', message=f'User {username} dihapus')
+
+@auth_bp.route('/api/users/<username>/role', methods=['PUT'])
+@jwt_required()
+@superuser_required
+def update_user_role(username):
+    data = request.json
+    new_role = data.get('role')
+    
+    if new_role not in ('user', 'petugas'):
+        return jsonify(status='error', message='Role tidak valid. Hanya bisa user atau petugas.'), 400
+        
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify(status='error', message='User tidak ditemukan'), 404
+        
+    if user.role == 'superuser':
+        return jsonify(status='error', message='Tidak dapat mengubah role superuser!'), 400
+        
+    user.role = new_role
+    db.session.commit()
+    return jsonify(status='success', message=f'Role {username} berhasil diubah menjadi {new_role}')
 
 @auth_bp.route("/api/user/ganti-password", methods=["POST"])
 @jwt_required()
@@ -189,10 +210,16 @@ def register_bulk():
             dilewati += 1
             continue
 
+        role_clean = role.lower()
+        if 'petugas' in role_clean:
+            final_role = 'petugas'
+        else:
+            final_role = 'user'
+
         new_user = User(
             username=username,
             password_hash=generate_password_hash(password),
-            role=role if role in ('user', 'petugas') else 'user'
+            role=final_role
         )
         db.session.add(new_user)
         berhasil += 1

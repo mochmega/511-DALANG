@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useAlert } from '../context/AlertContext'
 import { useAuth } from '../context/AuthContext'
 
@@ -20,6 +21,8 @@ export default function Pengaturan() {
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'petugas' })
   const [csvFile, setCsvFile] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [csvPreviewData, setCsvPreviewData] = useState(null)
+  const [showCsvPreview, setShowCsvPreview] = useState(false)
 
   // State Server Storage
   const [storageInfo, setStorageInfo] = useState(null)
@@ -129,8 +132,44 @@ export default function Pengaturan() {
     e.preventDefault()
     if (!csvFile) return showAlert("Pilih file CSV dulu!", "error")
     
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const text = event.target.result
+      const lines = text.split('\n')
+      if (lines.length < 2) return showAlert("File CSV kosong atau tidak valid (butuh header dan data)", "error")
+      
+      const parsedData = []
+      // Skip header
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
+        // simple split by comma
+        const cols = line.split(',')
+        if (cols.length >= 3) {
+          parsedData.push({
+            username: cols[0]?.trim() || '',
+            password: cols[1]?.trim() || '',
+            role: cols[2]?.trim() || 'user'
+          })
+        }
+      }
+      setCsvPreviewData(parsedData)
+      setShowCsvPreview(true)
+    }
+    reader.readAsText(csvFile)
+  }
+
+  const submitCsvData = async () => {
+    let csvString = "username,password,role\n"
+    csvPreviewData.forEach(row => {
+      if (row.username && row.password) {
+        csvString += `${row.username},${row.password},${row.role}\n`
+      }
+    })
+
+    const blob = new Blob([csvString], { type: 'text/csv' })
     const formData = new FormData()
-    formData.append('file', csvFile)
+    formData.append('file', blob, 'upload.csv')
 
     setIsUploading(true)
     try {
@@ -144,6 +183,8 @@ export default function Pengaturan() {
         showAlert(data.message, "success")
         fetchUsers()
         setCsvFile(null)
+        setShowCsvPreview(false)
+        setCsvPreviewData(null)
       } else {
         showAlert(data.message, "error")
       }
@@ -171,6 +212,33 @@ export default function Pengaturan() {
       }
     } catch (error) {
       showAlert("Error deleting user", "error")
+    }
+  }
+
+  const changeUserRole = async (username, currentRole) => {
+    const newRole = currentRole === 'user' ? 'petugas' : 'user'
+    const isConfirmed = await showConfirm(`Yakin ubah role ${username} menjadi ${newRole}?`)
+    if (!isConfirmed) return
+
+    try {
+      const token = auth?.token
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${username}/role`, { 
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ role: newRole })
+      })
+      const data = await res.json()
+      if (data.status === 'success') {
+        showAlert(data.message, "success")
+        fetchUsers()
+      } else {
+        showAlert(data.message, "error")
+      }
+    } catch (error) {
+      showAlert("Error updating user role", "error")
     }
   }
 
@@ -342,7 +410,6 @@ export default function Pengaturan() {
                     <select className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white" value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}>
                       <option value="petugas">Petugas</option>
                       <option value="user">User Biasa</option>
-                      <option value="superuser">Superuser</option>
                     </select>
                   </div>
                   <button type="submit" className="bg-emerald-600 px-4 py-2 rounded font-bold text-white w-full">Simpan User</button>
@@ -371,7 +438,14 @@ export default function Pengaturan() {
                         {user.role}
                       </span>
                     </td>
-                    <td className="py-4 text-rose-400 cursor-pointer hover:text-rose-300" onClick={() => deleteUser(user.username)}>Hapus</td>
+                    <td className="py-4 flex gap-4">
+                      {user.role !== 'superuser' && (
+                        <span className="text-blue-400 cursor-pointer hover:text-blue-300 font-semibold" onClick={() => changeUserRole(user.username, user.role)}>
+                          {user.role === 'user' ? '↑ Jadikan Petugas' : '↓ Jadikan User Biasa'}
+                        </span>
+                      )}
+                      <span className="text-rose-400 cursor-pointer hover:text-rose-300 font-semibold" onClick={() => deleteUser(user.username)}>Hapus</span>
+                    </td>
                   </tr>
                 ))}
                 {users.length === 0 && (
@@ -426,6 +500,69 @@ export default function Pengaturan() {
           </div>
         )}
       </div>
+
+      {showCsvPreview && csvPreviewData && createPortal(
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="p-5 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
+              <h5 className="font-bold text-lg text-white">Preview Data User CSV</h5>
+              <button className="text-slate-400 hover:text-white" onClick={() => setShowCsvPreview(false)}>✕</button>
+            </div>
+            
+            <div className="p-5 overflow-y-auto flex-1">
+              <p className="text-sm text-slate-400 mb-4">Silakan periksa dan perbaiki data jika ada yang salah sebelum disimpan.</p>
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="pb-2">No</th>
+                    <th className="pb-2">Username</th>
+                    <th className="pb-2">Password</th>
+                    <th className="pb-2">Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {csvPreviewData.map((row, idx) => (
+                    <tr key={idx} className="border-b border-slate-800">
+                      <td className="py-2">{idx + 1}</td>
+                      <td className="py-2">
+                        <input className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1" value={row.username} onChange={(e) => {
+                          const newData = [...csvPreviewData]
+                          newData[idx].username = e.target.value
+                          setCsvPreviewData(newData)
+                        }} />
+                      </td>
+                      <td className="py-2">
+                        <input className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1" value={row.password} onChange={(e) => {
+                          const newData = [...csvPreviewData]
+                          newData[idx].password = e.target.value
+                          setCsvPreviewData(newData)
+                        }} />
+                      </td>
+                      <td className="py-2">
+                        <select className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1" value={row.role.toLowerCase() === 'petugas' ? 'petugas' : 'user'} onChange={(e) => {
+                          const newData = [...csvPreviewData]
+                          newData[idx].role = e.target.value
+                          setCsvPreviewData(newData)
+                        }}>
+                          <option value="user">User Biasa</option>
+                          <option value="petugas">Petugas</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-5 border-t border-slate-800 bg-slate-900/50 flex justify-end gap-3">
+              <button onClick={() => setShowCsvPreview(false)} className="px-6 py-2 rounded-lg font-bold text-slate-300 bg-slate-800 hover:bg-slate-700">Batal</button>
+              <button onClick={submitCsvData} disabled={isUploading} className="px-6 py-2 rounded-lg font-bold text-white bg-theme-600 hover:bg-theme-500 disabled:opacity-50">
+                {isUploading ? 'Menyimpan...' : 'Simpan Data ke Database'}
+              </button>
+            </div>
+          </div>
+        </div>
+      , document.body)}
     </div>
   )
 }

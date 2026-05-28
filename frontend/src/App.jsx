@@ -164,8 +164,14 @@ function AppLayout() {
         {/* PROFIL & LOGOUT */}
         <div className={`mt-auto border-t border-slate-800/50 p-4 transition-all duration-300 ${isSidebarOpen ? 'px-4' : 'px-2 flex flex-col items-center'}`}>
           <div className={`bg-slate-800/30 rounded-xl p-3 border border-slate-700/50 flex items-center gap-3 ${!isSidebarOpen && 'justify-center'}`}>
-            <div className="w-10 h-10 rounded-full bg-theme-500/20 text-theme-400 border border-theme-500/30 flex items-center justify-center font-bold flex-shrink-0 uppercase">
-              {(username || 'SU').substring(0, 2)}
+            <div className="w-10 h-10 rounded-full bg-theme-500/20 text-theme-400 border border-theme-500/30 flex items-center justify-center font-bold flex-shrink-0">
+              {role === 'superuser' ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+              ) : role === 'petugas' ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              )}
             </div>
             {isSidebarOpen && (
               <div className="flex-1 overflow-hidden">

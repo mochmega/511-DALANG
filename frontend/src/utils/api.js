@@ -19,3 +19,30 @@ export const simpanKeDB = async (importMetaEnvUrl, auth, noBerkas, newList, log_
     return false
   }
 }
+
+export const viewFileWithAuth = async (importMetaEnvUrl, auth, filepath, showAlert) => {
+  try {
+    const filename = filepath.split('/').pop()
+    const res = await fetch(`${importMetaEnvUrl}/api/files/${filepath}`, {
+      headers: {
+        'Authorization': `Bearer ${auth?.token}`
+      }
+    })
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        if (showAlert) showAlert('Akses ditolak. Silakan login kembali.', 'error')
+      } else {
+        if (showAlert) showAlert('File tidak ditemukan atau terjadi kesalahan server.', 'error')
+      }
+      return
+    }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+    // We can't revoke it immediately if opened in a new tab because it needs time to load.
+  } catch (error) {
+    console.error('Gagal membuka file:', error)
+    if (showAlert) showAlert('Gagal membuka file, koneksi bermasalah.', 'error')
+  }
+}
+

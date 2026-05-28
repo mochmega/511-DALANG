@@ -21,7 +21,7 @@ export function AlertProvider({ children }) {
     if (alertState.isOpen && alertState.type !== 'confirm') {
       timer = setTimeout(() => {
         closePopup(true)
-      }, 3000)
+      }, 6000)
     }
     return () => clearTimeout(timer)
   }, [alertState.isOpen, alertState.type])

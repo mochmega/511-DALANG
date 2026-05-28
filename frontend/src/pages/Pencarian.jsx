@@ -4,7 +4,11 @@ import { useAuth } from '../context/AuthContext'
 import UniversalSearch from '../components/UniversalSearch'
 import Pagination from '../components/Pagination'
 import { highlightText } from '../utils/highlight'
-import { simpanKeDB } from '../utils/api'
+import { simpanKeDB, viewFileWithAuth } from '../utils/api'
+import { DateMaskInput } from '../components/DateMaskInput'
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
+import { createPortal } from 'react-dom'
 
 // KOMPONEN INPUT STYLING KHUSUS (Biar nggak nulis class berulang kali di form modal)
   const InputLabel = ({ children }) => <label className="block text-sm font-semibold text-slate-300 mb-1">{children}</label>
@@ -327,11 +331,11 @@ export default function Pencarian() {
       )}
 
       {/* ========================================= */}
-      {/* MODAL 1: LIHAT ISI DOKUMEN (GLASSMORPHISM) */}
+      {/* MODAL LIHAT ISI BERKAS */}
       {/* ========================================= */}
-      {modalMode === 'lihat' && selectedMap && (
+      {modalMode === 'lihat' && selectedMap && createPortal(
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden">
             
             {/* Header Modal */}
             <div className="p-5 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
@@ -382,7 +386,7 @@ export default function Pencarian() {
                           </td>
                           <td className="py-3 px-4 text-center">
                             {doc.file_scan ? (
-                              <a href={`${import.meta.env.VITE_API_URL}/api/files/${doc.file_scan}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:text-emerald-300 font-semibold text-xs border border-emerald-500/30 px-2 py-1 rounded bg-emerald-500/10">👁️ Lihat</a>
+                              <button onClick={() => viewFileWithAuth(import.meta.env.VITE_API_URL, auth, doc.file_scan, showAlert)} className="text-emerald-400 hover:text-emerald-300 font-semibold text-xs border border-emerald-500/30 px-2 py-1 rounded bg-emerald-500/10">👁️ Lihat</button>
                             ) : <span className="text-slate-600">-</span>}
                           </td>
                           {role !== 'user' && (
@@ -412,12 +416,12 @@ export default function Pencarian() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* ========================================= */}
-      {/* MODAL 2: TAMBAH DOKUMEN BARU */}
+      {/* MODAL TAMBAH DOKUMEN BARU KE DALAM BERKAS */}
       {/* ========================================= */}
-      {modalMode === 'tambah' && selectedMap && (
+      {modalMode === 'tambah' && selectedMap && createPortal(
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
             <div className="p-5 border-b border-slate-800 bg-emerald-900/20 text-emerald-400 font-bold text-lg flex items-center gap-2">
@@ -471,7 +475,18 @@ export default function Pencarian() {
                   </div>
                   <div>
                     <InputLabel>Tanggal</InputLabel>
-                    <InputField type="date" value={newDoc.tanggal} onClick={(e) => e.target.showPicker && e.target.showPicker()} onChange={(e) => setNewDoc({...newDoc, tanggal: e.target.value})} />
+                    <DatePicker 
+                      selected={newDoc.tanggal ? new Date(newDoc.tanggal) : null}
+                      onChange={(date) => setNewDoc({...newDoc, tanggal: date ? date.toISOString().split('T')[0] : ''})}
+                      dateFormat="dd/MM/yyyy"
+                      customInput={<DateMaskInput />}
+                      placeholderText="DD/MM/YYYY"
+                      showMonthDropdown
+                      showYearDropdown
+                      scrollableYearDropdown
+                      yearDropdownItemNumber={5}
+                      dropdownMode="select"
+                    />
                   </div>
                 </div>
               </div>
@@ -485,12 +500,12 @@ export default function Pencarian() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* ========================================= */}
-      {/* MODAL 3: EDIT DOKUMEN */}
+      {/* MODAL EDIT SATU DOKUMEN (DI DALAM BERKAS) */}
       {/* ========================================= */}
-      {modalMode === 'edit_satu' && editDocData && (
+      {modalMode === 'edit_satu' && editDocData && createPortal(
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
             <div className="p-5 border-b border-slate-800 bg-slate-900/20 text-theme-400 font-bold text-lg flex items-center gap-2">
@@ -545,7 +560,18 @@ export default function Pencarian() {
                   </div>
                   <div>
                     <InputLabel>Tanggal</InputLabel>
-                    <InputField type="date" value={editDocData.tanggal} onClick={(e) => e.target.showPicker && e.target.showPicker()} onChange={(e) => setEditDocData({...editDocData, tanggal: e.target.value})} />
+                    <DatePicker 
+                      selected={editDocData.tanggal ? new Date(editDocData.tanggal) : null}
+                      onChange={(date) => setEditDocData({...editDocData, tanggal: date ? date.toISOString().split('T')[0] : ''})}
+                      dateFormat="dd/MM/yyyy"
+                      customInput={<DateMaskInput />}
+                      placeholderText="DD/MM/YYYY"
+                      showMonthDropdown
+                      showYearDropdown
+                      scrollableYearDropdown
+                      yearDropdownItemNumber={5}
+                      dropdownMode="select"
+                    />
                   </div>
                 </div>
               </div>
@@ -559,7 +585,7 @@ export default function Pencarian() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   )
 }
