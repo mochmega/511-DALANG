@@ -150,12 +150,13 @@ def search_berkas():
 def update_isi_berkas():
     data = request.get_json()
 
-    no_berkas = data.get('no_berkas')
-    full_doc_list = data.get('isi_berkas', [])
-
-    if not no_berkas:
+    no_berkas_raw = data.get('no_berkas')
+    if not no_berkas_raw:
         return jsonify({'status': 'error', 'message': 'Nomor berkas tidak valid'}), 400
         
+    no_berkas = str(no_berkas_raw)
+    full_doc_list = data.get('isi_berkas', [])
+
     username = get_jwt_identity()
     log_action = data.get('log_action')
     log_desc = data.get('log_desc')
@@ -164,9 +165,9 @@ def update_isi_berkas():
     if not data_berkas:
         return jsonify({'status': 'error', 'message': 'Berkas tidak ditemukan'}), 404
         
-    Dokumen.query.filter_by(no_berkas=no_berkas).delete()
+    Dokumen.query.filter_by(no_berkas=no_berkas).delete(synchronize_session=False)
         
-    # ✅ Sprint 3.1 — Auto-set batas_kembali +7 hari jika status Dipinjam dan belum ada
+    # --- Sprint 3.1 --- Auto-set batas_kembali +7 hari jika status Dipinjam dan belum ada
     for doc in full_doc_list:
         if doc.get("status") == "Dipinjam" and not doc.get("batas_kembali"):
             batas = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
@@ -263,7 +264,121 @@ def proses_registrasi():
     db.session.commit()
     
     return jsonify({'status': 'success', 'message': f'WP {nama.upper()} sukses terdaftar di Berkas No. {no_berkas}!'})
-    
+
+@berkas_bp.route('/api/registrasi/massal', methods=['POST'])
+@jwt_required()
+@petugas_required
+def registrasi_massal():
+    if 'file' not in request.files:
+        return jsonify({'status': 'error', 'message': 'Tidak ada file yang diunggah'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'status': 'error', 'message': 'File tidak dipilih'}), 400
+        
+    try:
+        import pandas as pd
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(file, dtype=str)
+        elif file.filename.endswith(('.xls', '.xlsx')):
+            df = pd.read_excel(file, dtype=str)
+        else:
+            return jsonify({'status': 'error', 'message': 'Format file harus .csv, .xls, atau .xlsx'}), 400
+            
+        df.columns = df.columns.str.strip().str.upper()
+        
+        # Mapping possible column names
+        col_nama = next((c for c in df.columns if 'NAMA' in c), None)
+        col_npwp = next((c for c in df.columns if c in ['NPWP', 'NPWP_15', 'NPWP 15']), None)
+        col_npwp16 = next((c for c in df.columns if c in ['NPWP_16', 'NPWP 16', 'NIK']), None)
+        col_nitku = next((c for c in df.columns if 'NITKU' in c), None)
+        
+        if not col_nama:
+            return jsonify({'status': 'error', 'message': 'Kolom berisi NAMA WP tidak ditemukan di file Excel.'}), 400
+
+        groups = {}
+        for _, row in df.iterrows():
+            nama = str(row.get(col_nama, '')).strip()
+            if pd.isna(nama) or nama.lower() == 'nan' or not nama:
+                continue
+                
+            npwp16 = str(row.get(col_npwp16, '')).strip() if col_npwp16 else ''
+            if pd.isna(npwp16) or npwp16.lower() == 'nan': npwp16 = ''
+            
+            npwp = str(row.get(col_npwp, '')).strip() if col_npwp else ''
+            if pd.isna(npwp) or npwp.lower() == 'nan': npwp = ''
+            
+            nitku = str(row.get(col_nitku, '')).strip() if col_nitku else ''
+            if pd.isna(nitku) or nitku.lower() == 'nan': nitku = ''
+            
+            group_key = npwp16 if npwp16 else nama.upper()
+            if group_key not in groups:
+                groups[group_key] = []
+            
+            groups[group_key].append({
+                'nama': nama,
+                'npwp': npwp,
+                'npwp_16': npwp16,
+                'nitku': nitku
+            })
+            
+        # Get active numbers to find slots
+        rows = DataBerkas.query.filter(DataBerkas.no_berkas.notlike('EKS-%')).with_entities(DataBerkas.no_berkas).distinct().all()
+        active_numbers = []
+        for row in rows:
+            try:
+                active_numbers.append(int(row[0]))
+            except ValueError:
+                pass
+        
+        active_numbers.sort()
+        
+        def get_next_slot(actives):
+            if not actives: return 1
+            for i in range(1, actives[-1] + 1):
+                if i not in actives:
+                    return i
+            return actives[-1] + 1
+
+        inserted_count = 0
+        slot_count = 0
+        
+        for group_key, items in groups.items():
+            next_slot = get_next_slot(active_numbers)
+            active_numbers.append(next_slot)
+            active_numbers.sort()
+            
+            slot_count += 1
+            for item in items:
+                new_berkas = DataBerkas(
+                    no_berkas=str(next_slot),
+                    nama=item['nama'].upper(),
+                    npwp=item['npwp'] if item['npwp'] else '-',
+                    npwp_16=item['npwp_16'] if item['npwp_16'] else '-',
+                    nitku=item['nitku'] if item['nitku'] else '-'
+                )
+                db.session.add(new_berkas)
+                inserted_count += 1
+                
+        db.session.commit()
+        
+        # Log activity
+        identity = get_jwt_identity()
+        new_log = ActivityLog(action_type='Create', description=f'Registrasi Massal: {inserted_count} dokumen, menggunakan {slot_count} rumah berkas', username=identity)
+        db.session.add(new_log)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success', 
+            'message': f'Berhasil mendaftarkan {inserted_count} Wajib Pajak ke dalam {slot_count} Rumah Berkas baru secara otomatis!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        import logging
+        logging.getLogger('gudang').error(f"Error registrasi massal: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'Terjadi kesalahan internal: {str(e)}'}), 500
+
 @berkas_bp.route('/api/upload', methods=['POST'])
 @jwt_required()
 def upload_file():
@@ -363,11 +478,22 @@ def cari_dokumen():
     Query params: q, status, tahun, page
     """
     q = request.args.get('q', '').strip().lower()
+    search_by = request.args.get('by', 'all').strip()
     status_filter = request.args.get('status', '').strip()
     tahun_filter = request.args.get('tahun', '').strip()
+    jenis_filter = request.args.get('jenis', '').strip()
     page = request.args.get('page', 1, type=int)
-    limit = 50
-    offset = (page - 1) * limit
+    
+    limit_str = request.args.get('limit', '50').lower()
+    if limit_str in ['semua', 'all']:
+        limit = -1
+    else:
+        try:
+            limit = int(limit_str)
+        except ValueError:
+            limit = 50
+
+    offset = (page - 1) * limit if limit > 0 else 0
 
     # Ambil semua berkas yang punya isi_berkas valid (bukan EKS-)
     
@@ -375,7 +501,7 @@ def cari_dokumen():
         DataBerkas, Dokumen.no_berkas == DataBerkas.no_berkas
     ).filter(
         DataBerkas.no_berkas.notlike('EKS-%')
-    )
+    ).group_by(Dokumen.id)
     
     if status_filter:
         query = query.filter(Dokumen.status == status_filter)
@@ -383,15 +509,53 @@ def cari_dokumen():
     if tahun_filter:
         query = query.filter(Dokumen.tahun == tahun_filter)
         
+    if jenis_filter:
+        query = query.filter(Dokumen.jenis == jenis_filter)
+        
     if q:
         search_term = f"%{q}%"
-        query = query.filter(
-            or_(
-                Dokumen.nama.like(search_term),
-                Dokumen.nomor.like(search_term),
-                Dokumen.jenis.like(search_term)
+        if search_by == 'nama':
+            query = query.filter(
+                or_(
+                    Dokumen.pemilik.like(search_term),
+                    DataBerkas.nama.like(search_term)
+                )
             )
-        )
+        elif search_by == 'no_berkas':
+            query = query.filter(
+                or_(
+                    DataBerkas.no_berkas.like(search_term),
+                    Dokumen.wadah.like(search_term)
+                )
+            )
+        elif search_by == 'npwp':
+            query = query.filter(
+                or_(
+                    DataBerkas.nitku.like(search_term),
+                    DataBerkas.npwp.like(search_term),
+                    DataBerkas.npwp_16.like(search_term)
+                )
+            )
+        elif search_by == 'nama_dokumen':
+            query = query.filter(
+                or_(
+                    Dokumen.nama.like(search_term),
+                    Dokumen.nomor.like(search_term)
+                )
+            )
+        else: # all
+            query = query.filter(
+                or_(
+                    Dokumen.nama.like(search_term),
+                    Dokumen.nomor.like(search_term),
+                    Dokumen.jenis.like(search_term),
+                    Dokumen.pemilik.like(search_term),
+                    DataBerkas.nama.like(search_term),
+                    DataBerkas.nitku.like(search_term),
+                    DataBerkas.npwp.like(search_term),
+                    DataBerkas.no_berkas.like(search_term)
+                )
+            )
         
     total = query.count()
     results = query.offset(offset).limit(limit).all()
@@ -409,6 +573,7 @@ def cari_dokumen():
             'tahun': doc.tahun,
             'tanggal': doc.tanggal.isoformat() if doc.tanggal else "",
             'pemilik': doc.pemilik,
+            'wadah': doc.wadah,
             'status': doc.status,
             'peminjam': doc.peminjam,
             'tanggal_pinjam': doc.tanggal_pinjam.isoformat() if doc.tanggal_pinjam else "",

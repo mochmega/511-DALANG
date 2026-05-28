@@ -23,23 +23,23 @@ def get_dashboard_stats():
     
     # Hanya pantau dokumen dari WP yang masih aktif (Bukan EKS)
     # Sedang Dipinjam
-    total_dipinjam = db.session.query(Dokumen).join(
+    total_dipinjam = db.session.query(db.func.count(db.func.distinct(Dokumen.id))).join(
         DataBerkas, Dokumen.no_berkas == DataBerkas.no_berkas
     ).filter(
         DataBerkas.no_berkas.notlike('EKS-%'),
         Dokumen.status == 'Dipinjam'
-    ).count()
+    ).scalar() or 0
             
     # Terlambat Kembali
     hari_ini = date.today()
-    total_terlambat = db.session.query(Dokumen).join(
+    total_terlambat = db.session.query(db.func.count(db.func.distinct(Dokumen.id))).join(
         DataBerkas, Dokumen.no_berkas == DataBerkas.no_berkas
     ).filter(
         DataBerkas.no_berkas.notlike('EKS-%'),
         Dokumen.status == 'Dipinjam',
         Dokumen.batas_kembali != None,
         Dokumen.batas_kembali < hari_ini
-    ).count()
+    ).scalar() or 0
             
     # Fetch recent activities based on role
     query = ActivityLog.query

@@ -55,7 +55,7 @@ export default function Mutasi() {
         if (!acc[curr.no_berkas]) {
           acc[curr.no_berkas] = { ...curr, nama: curr.nama, npwp_16: curr.npwp_16, dokumenList: currentDocs, cabangCount: 0 }
         } else {
-          acc[curr.no_berkas].dokumenList = [...acc[curr.no_berkas].dokumenList, ...currentDocs]
+          // Do NOT append currentDocs, because they are exactly the same documents from the backend
           acc[curr.no_berkas].cabangCount += 1
         }
         return acc
@@ -78,8 +78,7 @@ export default function Mutasi() {
     if (activeTab === 'proses') {
       setPage(1)
       const timer = setTimeout(() => {
-        if (query.trim() !== '') fetchData(query, false, 1, limit)
-        else { setHasilCari([]); setSudahCari(false); }
+        fetchData(query, false, 1, limit)
       }, 500)
       return () => clearTimeout(timer)
     }
@@ -326,7 +325,7 @@ export default function Mutasi() {
             })}
           </div>
 
-          {sudahCari && query.trim() !== '' && (
+          {sudahCari && (
             <Pagination 
               currentPage={page} 
               totalPages={totalPages} 

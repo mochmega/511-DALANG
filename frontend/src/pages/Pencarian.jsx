@@ -59,7 +59,7 @@ export default function Pencarian() {
           acc[curr.no_berkas] = { ...curr, cabang: [], dokumenList: currentDocs }
         } else {
           acc[curr.no_berkas].cabang.push(curr)
-          acc[curr.no_berkas].dokumenList = [...acc[curr.no_berkas].dokumenList, ...currentDocs]
+          // Do NOT append currentDocs, because they are exactly the same documents from the backend
         }
         return acc
       }, {})
@@ -331,7 +331,7 @@ export default function Pencarian() {
       {/* ========================================= */}
       {modalMode === 'lihat' && selectedMap && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
             
             {/* Header Modal */}
             <div className="p-5 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
@@ -345,7 +345,7 @@ export default function Pencarian() {
             </div>
 
             {/* Body Modal */}
-            <div className="overflow-y-auto flex-1 bg-slate-950/50">
+            <div className="overflow-y-auto overflow-x-auto flex-1 bg-slate-950/50">
               {selectedMap.dokumenList.length === 0 ? (
                 <div className="text-center py-20 text-slate-500">
                   <span className="text-5xl mb-3 block">📭</span>

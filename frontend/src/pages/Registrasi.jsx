@@ -172,7 +172,7 @@ export default function Registrasi() {
                   />
                   {isDaurUlang ? (
                     <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold px-4 py-3 rounded-lg flex items-center gap-2 text-sm">
-                      <span className="text-lg">♻️</span> Daur Ulang (Gigi Bolong)
+                      <span className="text-lg">♻️</span> Slot Tersedia
                     </span>
                   ) : (
                     <span className="bg-slate-700 text-slate-300 border border-slate-600 font-bold px-4 py-3 rounded-lg flex items-center gap-2 text-sm">

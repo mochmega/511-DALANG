@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import UniversalSearch from '../components/UniversalSearch'
 import Pagination from '../components/Pagination'
 import { highlightText } from '../utils/highlight'
@@ -20,6 +21,25 @@ export default function Sirkulasi() {
   
   const { showAlert } = useAlert()
   const { auth } = useAuth()
+  const location = useLocation()
+  
+  // Tangkap query dari URL redirect
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const urlNoBerkas = params.get('no_berkas')
+    if (urlNoBerkas) {
+      setQuery(urlNoBerkas)
+      setSearchBy('no_berkas')
+    }
+  }, [location.search])
+
+  // State Peminjaman Massal
+  const [selectedDocs, setSelectedDocs] = useState([])
+
+  // Reset selectedDocs tiap kali Rumah Berkas diganti
+  useEffect(() => {
+    setSelectedDocs([])
+  }, [selectedMap])
   
   // State Operasional Sirkulasi
   const [peminjam, setPeminjam] = useState('')
@@ -71,7 +91,11 @@ export default function Sirkulasi() {
         return acc
       }, {})
       
-      setHasil(Object.values(groupedData))
+      const hasilArray = Object.values(groupedData)
+      setHasil(hasilArray)
+      if (hasilArray.length === 1) {
+        setSelectedMap(hasilArray[0])
+      }
       setSudahCari(true)
     } catch (error) {
       console.error("Gagal mencari data:", error)
@@ -111,6 +135,33 @@ export default function Sirkulasi() {
     const success = await simpanKeDB(import.meta.env.VITE_API_URL, auth, selectedMap.no_berkas, newList, 'Pinjam', logDesc)
     if (success) {
       setSelectedMap({ ...selectedMap, dokumenList: newList })
+      handleCari()
+    }
+  }
+
+  // LOGIKA PROSES PINJAM MASSAL
+  const prosesPinjamMassal = async () => {
+    if (selectedDocs.length === 0) return showAlert("Pilih minimal 1 dokumen yang ingin dipinjam!", "error")
+    if (!peminjam.trim()) return showAlert("Nama Peminjam wajib diisi di form atas!", "error")
+    
+    const newList = [...selectedMap.dokumenList]
+    
+    selectedDocs.forEach(docIndex => {
+      newList[docIndex] = {
+        ...newList[docIndex],
+        status: role === 'user' ? 'Menunggu Verifikasi' : 'Dipinjam',
+        peminjam: peminjam,
+        tanggal_pinjam: tanggalPinjam,
+        batas_kembali: batasKembali,
+        keperluan: keperluan
+      }
+    })
+
+    const logDesc = `${selectedDocs.length} dokumen diajukan pinjam oleh ${peminjam}`
+    const success = await simpanKeDB(import.meta.env.VITE_API_URL, auth, selectedMap.no_berkas, newList, 'Pinjam', logDesc)
+    if (success) {
+      setSelectedMap({ ...selectedMap, dokumenList: newList })
+      setSelectedDocs([])
       handleCari()
     }
   }
@@ -338,19 +389,64 @@ export default function Sirkulasi() {
 
               {/* DAFTAR DOKUMEN DI DALAM RUMAH BERKAS TERSEBUT */}
               <div className="space-y-3">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wide block">📄 Pilih Dokumen Fisik</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">📄 Pilih Dokumen Fisik</span>
+                  {selectedDocs.length > 0 && (
+                    <button 
+                      onClick={prosesPinjamMassal}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2 px-4 rounded-lg shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center gap-2"
+                    >
+                      <span>📤 Pinjam {selectedDocs.length} Terpilih</span>
+                    </button>
+                  )}
+                </div>
                 
                 {selectedMap.dokumenList.length === 0 ? (
                   <p className="text-sm text-slate-500 italic p-4 text-center">Rumah Berkas ini kosong, belum ada dokumen terdaftar.</p>
                 ) : (
                   <div className="border border-slate-800/80 rounded-xl overflow-hidden divide-y divide-slate-800/50">
+                    {/* Header Select All */}
+                    <div className="bg-slate-800/50 p-3 flex items-center gap-3 border-b border-slate-700">
+                      <input 
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
+                        checked={selectedMap.dokumenList.filter(d => d.status === 'Di Gudang').length > 0 && selectedDocs.length === selectedMap.dokumenList.filter(d => d.status === 'Di Gudang').length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            const allAvailable = selectedMap.dokumenList.map((d, i) => d.status === 'Di Gudang' ? i : -1).filter(i => i !== -1)
+                            setSelectedDocs(allAvailable)
+                          } else {
+                            setSelectedDocs([])
+                          }
+                        }}
+                      />
+                      <span className="text-xs font-bold text-slate-400 uppercase">Pilih Semua yang Di Rak</span>
+                    </div>
+
                     {selectedMap.dokumenList.map((doc, idx) => {
                       const isGudang = doc.status === 'Di Gudang'
+                      const isChecked = selectedDocs.includes(idx)
                       return (
-                        <div key={idx} className="p-4 bg-slate-900/20 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-800/20 transition-colors">
-                          <div className="flex-1">
-                            <div className="font-bold text-white text-sm">{doc.nama}</div>
-                            <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-4">
+                        <div key={idx} className={`p-4 bg-slate-900/20 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors ${isChecked ? 'bg-indigo-900/20' : 'hover:bg-slate-800/20'}`}>
+                          
+                          <div className="flex items-center gap-4 flex-1">
+                            {isGudang ? (
+                              <input 
+                                type="checkbox"
+                                className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) setSelectedDocs([...selectedDocs, idx])
+                                  else setSelectedDocs(selectedDocs.filter(id => id !== idx))
+                                }}
+                              />
+                            ) : (
+                              <div className="w-4 h-4 opacity-0 pointer-events-none"></div>
+                            )}
+
+                            <div className="flex-1">
+                              <div className="font-bold text-white text-sm">{doc.nama}</div>
+                              <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-4">
                               <span><strong>No:</strong> {doc.nomor || '-'}</span>
                               <span><strong>Tahun:</strong> {doc.tahun || '-'}</span>
                               <span><strong>Milik:</strong> <span className="text-theme-400">{doc.pemilik ? doc.pemilik.split(')')[0] + ')' : '-'}</span></span>
@@ -376,6 +472,7 @@ export default function Sirkulasi() {
                                 )}
                               </div>
                             )}
+                            </div>
                           </div>
 
                           <div className="flex items-center gap-4 justify-between md:justify-end">
